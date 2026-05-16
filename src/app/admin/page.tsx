@@ -55,12 +55,17 @@ export default function AdminPage() {
     router.push('/display');
   };
 
+  const handleOpenImport = () => {
+    router.push('/admin/import');
+  };
+
   return (
     <div style={{ position: 'fixed', inset: 0 }}>
       <AdminPanel
         user={user}
         onLogout={handleLogout}
         onOpenTV={handleOpenTV}
+        onOpenImport={handleOpenImport}
         initialItems={items}
       />
     </div>

@@ -20,9 +20,10 @@ interface AdminTopBarProps {
   user: { email: string };
   onLogout?: () => void;
   onOpenTV?: () => void;
+  onOpenImport?: () => void;
 }
 
-function AdminTopBar({ user, onLogout, onOpenTV }: AdminTopBarProps) {
+function AdminTopBar({ user, onLogout, onOpenTV, onOpenImport }: AdminTopBarProps) {
   return (
     <div
       style={{
@@ -47,6 +48,16 @@ function AdminTopBar({ user, onLogout, onOpenTV }: AdminTopBarProps) {
         <span style={{ color: '#94A3B8', fontSize: 13, marginLeft: 8 }}>· panel</span>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <button
+          onClick={onOpenImport}
+          style={{
+            padding: '8px 14px', borderRadius: 9, border: '1px solid #E2E8F0',
+            background: '#fff', color: '#0f172a', fontSize: 13, fontWeight: 500,
+            display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer',
+          }}
+        >
+          <Icon name="sparkles" size={16} /> Importar JSON
+        </button>
         <button
           onClick={onOpenTV}
           style={{
@@ -665,6 +676,7 @@ interface AdminPanelProps {
   user?: { email: string };
   onLogout?: () => void;
   onOpenTV?: () => void;
+  onOpenImport?: () => void;
   initialItems?: Card[];
 }
 
@@ -672,6 +684,7 @@ export default function AdminPanel({
   user = { email: 'familia@edudisplay.app' },
   onLogout,
   onOpenTV,
+  onOpenImport,
   initialItems = [],
 }: AdminPanelProps) {
   const [items, setItems] = useState<Card[]>(() => initialItems.map((x) => ({ ...x })));
@@ -789,7 +802,7 @@ export default function AdminPanel({
         gridTemplateRows: '60px 1fr',
       }}
     >
-      <AdminTopBar user={user} onLogout={onLogout} onOpenTV={onOpenTV} />
+      <AdminTopBar user={user} onLogout={onLogout} onOpenTV={onOpenTV} onOpenImport={onOpenImport} />
 
       <div style={{ display: 'grid', gridTemplateColumns: '240px 1fr 520px', minHeight: 0 }}>
         <AdminSidebar
