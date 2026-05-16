@@ -6,7 +6,7 @@ import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { isAdminEmail } from '@/lib/admin-whitelist';
 import { useCards } from '@/lib/use-cards';
-import { createCard } from '@/lib/cards-repo';
+import { createCardsBatch } from '@/lib/cards-repo';
 import { CATEGORIES } from '@/lib/categories';
 import Icon from '@/components/Icon';
 import {
@@ -57,6 +57,7 @@ export default function ImportPage() {
   const [skipDuplicates, setSkipDuplicates] = useState(true);
   const [status, setStatus] = useState<ImportStatus>('idle');
   const [results, setResults] = useState<ImportResult[]>([]);
+  const [progress, setProgress] = useState({ done: 0, total: 0 });
   const [copied, setCopied] = useState(false);
 
   const handleValidate = () => {
@@ -85,40 +86,60 @@ export default function ImportPage() {
   const handleImport = async () => {
     setStatus('importing');
     setResults([]);
+    setProgress({ done: 0, total: 0 });
 
     // taken = refCodes ya en DB + los que se vayan asignando en esta tanda
     const taken = new Set(existingRefCodes);
 
-    const out: ImportResult[] = [];
+    // Construye la lista a importar resolviendo refCodes únicos primero.
+    type Draft = Omit<import('@/lib/types').Card, 'id' | 'refCode'> & { refCode: string };
+    const drafts: Draft[] = [];
+    const indexMap: Array<{ index: number; refCode: string }> = [];
+
     for (const it of items) {
       if (!it.result.ok) continue;
       const draft = it.result.card;
 
-      // Salto duplicados explícitos (refCode provisto que ya existe en DB)
       if (skipDuplicates && draft.refCode && existingRefCodes.has(draft.refCode)) {
         continue;
       }
 
-      // Si no trae refCode, asignar uno único; si trae uno único, respetarlo.
       const refCode = draft.refCode && !taken.has(draft.refCode)
         ? draft.refCode
         : assignUniqueRefCode(draft.type, taken);
       taken.add(refCode);
 
-      try {
-        await createCard({ ...draft, refCode });
-        out.push({ index: it.index, refCode, ok: true });
-      } catch (err) {
-        out.push({
-          index: it.index,
-          refCode,
-          ok: false,
-          error: err instanceof Error ? err.message : String(err),
-        });
-      }
+      drafts.push({
+        type: draft.type,
+        title: draft.title,
+        content: draft.content,
+        answer: draft.answer,
+        active: draft.active,
+        frequency: draft.frequency,
+        refCode,
+      });
+      indexMap.push({ index: it.index, refCode });
     }
-    setResults(out);
-    setStatus('done');
+
+    setProgress({ done: 0, total: drafts.length });
+
+    try {
+      await createCardsBatch(drafts, (done, total) => setProgress({ done, total }));
+      setResults(indexMap.map(({ index, refCode }) => ({ index, refCode, ok: true })));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      // Si falla un batch entero, marca todos los que faltaban como error.
+      setResults(
+        indexMap.map(({ index, refCode }, i) => ({
+          index,
+          refCode,
+          ok: i < progress.done,
+          ...(i < progress.done ? {} : { error: message }),
+        }))
+      );
+    } finally {
+      setStatus('done');
+    }
   };
 
   // ── Export filters ─────────────────────────────────────────────────────
@@ -407,7 +428,24 @@ export default function ImportPage() {
                 ))}
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 14, gap: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginTop: 14, gap: 14 }}>
+                {status === 'importing' && progress.total > 0 && (
+                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ flex: 1, height: 6, background: '#E2E8F0', borderRadius: 99, overflow: 'hidden' }}>
+                      <div
+                        style={{
+                          height: '100%',
+                          width: `${(progress.done / progress.total) * 100}%`,
+                          background: '#059669',
+                          transition: 'width 0.2s linear',
+                        }}
+                      />
+                    </div>
+                    <span style={{ fontSize: 12, color: '#475569', fontVariantNumeric: 'tabular-nums', minWidth: 80, textAlign: 'right' }}>
+                      {progress.done} / {progress.total}
+                    </span>
+                  </div>
+                )}
                 <button
                   onClick={handleImport}
                   disabled={toImportCount === 0 || status === 'importing'}

@@ -228,18 +228,42 @@ function FrequencyBars({ freq }: { freq: Frequency }) {
 
 // ── AdminList ──────────────────────────────────────────────────────────────
 interface AdminListProps {
-  items: Card[];
+  items: Card[]; // slice ya paginado
   selected: Card | null;
   onSelect: (it: Card) => void;
   onDelete: (id: string) => void;
   query: string;
   setQuery: (v: string) => void;
   onCreate: () => void;
-  totalShown: number;
+  totalShown: number; // total filtrado (antes de paginar)
   totalAll: number;
+  page: number;
+  pageSize: number;
+  onPageChange: (p: number) => void;
+  onPageSizeChange: (size: number) => void;
 }
 
-function AdminList({ items, selected, onSelect, onDelete, query, setQuery, onCreate, totalShown, totalAll }: AdminListProps) {
+const PAGE_SIZE_OPTIONS = [25, 50, 100, 200];
+
+function AdminList({
+  items,
+  selected,
+  onSelect,
+  onDelete,
+  query,
+  setQuery,
+  onCreate,
+  totalShown,
+  totalAll,
+  page,
+  pageSize,
+  onPageChange,
+  onPageSizeChange,
+}: AdminListProps) {
+  const totalPages = Math.max(1, Math.ceil(totalShown / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const from = totalShown === 0 ? 0 : (safePage - 1) * pageSize + 1;
+  const to = Math.min(safePage * pageSize, totalShown);
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
       <div
@@ -278,8 +302,46 @@ function AdminList({ items, selected, onSelect, onDelete, query, setQuery, onCre
         </button>
       </div>
 
-      <div style={{ padding: '8px 28px', fontSize: 12, color: '#94A3B8', background: '#fff' }}>
-        Mostrando {totalShown} de {totalAll}
+      <div
+        style={{
+          padding: '8px 28px',
+          fontSize: 12,
+          color: '#94A3B8',
+          background: '#fff',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 16,
+          borderBottom: '1px solid #F1F5F9',
+        }}
+      >
+        <span>
+          {totalShown === 0
+            ? `Sin resultados (${totalAll} en total)`
+            : `Mostrando ${from}–${to} de ${totalShown}${totalShown !== totalAll ? ` · ${totalAll} en total` : ''}`}
+        </span>
+        <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <span>Por página:</span>
+          <select
+            value={pageSize}
+            onChange={(e) => onPageSizeChange(Number(e.target.value))}
+            style={{
+              padding: '4px 8px',
+              borderRadius: 6,
+              border: '1px solid #E2E8F0',
+              background: '#fff',
+              fontSize: 12,
+              color: '#475569',
+              fontFamily: 'inherit',
+            }}
+          >
+            {PAGE_SIZE_OPTIONS.map((n) => (
+              <option key={n} value={n}>
+                {n}
+              </option>
+            ))}
+          </select>
+        </label>
       </div>
 
       <div style={{ flex: 1, overflow: 'auto', padding: '8px 16px 24px', background: '#F8F9FA' }}>
@@ -361,6 +423,88 @@ function AdminList({ items, selected, onSelect, onDelete, query, setQuery, onCre
           );
         })}
       </div>
+
+      {totalPages > 1 && (
+        <Pagination
+          page={safePage}
+          totalPages={totalPages}
+          onChange={onPageChange}
+        />
+      )}
+    </div>
+  );
+}
+
+// ── Pagination ─────────────────────────────────────────────────────────────
+interface PaginationProps {
+  page: number;
+  totalPages: number;
+  onChange: (page: number) => void;
+}
+
+function Pagination({ page, totalPages, onChange }: PaginationProps) {
+  const go = (p: number) => onChange(Math.max(1, Math.min(totalPages, p)));
+  const btn = (label: React.ReactNode, target: number, disabled: boolean, key?: string | number) => (
+    <button
+      key={key ?? String(label)}
+      onClick={() => go(target)}
+      disabled={disabled}
+      style={{
+        minWidth: 32, height: 32, padding: '0 10px',
+        borderRadius: 8, border: '1px solid #E2E8F0',
+        background: disabled ? '#F8FAFC' : '#fff',
+        color: disabled ? '#CBD5E1' : '#0f172a',
+        fontSize: 12, fontWeight: 500,
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+      }}
+    >
+      {label}
+    </button>
+  );
+
+  // Ventana de páginas visibles: max 5 botones numéricos.
+  const window = 5;
+  let start = Math.max(1, page - Math.floor(window / 2));
+  const end = Math.min(totalPages, start + window - 1);
+  start = Math.max(1, end - window + 1);
+  const pages: number[] = [];
+  for (let p = start; p <= end; p++) pages.push(p);
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+        padding: '12px 16px',
+        borderTop: '1px solid #E2E8F0',
+        background: '#fff',
+      }}
+    >
+      {btn('«', 1, page === 1)}
+      {btn('‹', page - 1, page === 1)}
+      {pages.map((p) => (
+        <button
+          key={p}
+          onClick={() => go(p)}
+          style={{
+            minWidth: 32, height: 32, padding: '0 10px',
+            borderRadius: 8,
+            border: '1px solid ' + (p === page ? '#0f172a' : '#E2E8F0'),
+            background: p === page ? '#0f172a' : '#fff',
+            color: p === page ? '#fff' : '#0f172a',
+            fontSize: 12, fontWeight: p === page ? 700 : 500,
+            cursor: 'pointer',
+            fontVariantNumeric: 'tabular-nums',
+          }}
+        >
+          {p}
+        </button>
+      ))}
+      {btn('›', page + 1, page === totalPages)}
+      {btn('»', totalPages, page === totalPages)}
     </div>
   );
 }
@@ -693,6 +837,8 @@ export default function AdminPanel({
   const [filterState, setFilterState] = useState('ALL');
   const [query, setQuery] = useState('');
   const [creating, setCreating] = useState<Card | false>(false);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
   // Keep items in sync when parent passes new data (e.g. from Firestore)
   React.useEffect(() => {
@@ -701,18 +847,31 @@ export default function AdminPanel({
     }
   }, [initialItems]);
 
-  const filtered = items.filter((it) => {
-    if (filterCat !== 'ALL' && it.type !== filterCat) return false;
-    if (filterState === 'ACTIVE' && !it.active) return false;
-    if (filterState === 'INACTIVE' && it.active) return false;
-    if (query) {
-      const q = query.toLowerCase();
-      if (!(it.title.toLowerCase().includes(q) ||
-            it.content.toLowerCase().includes(q) ||
-            it.refCode.toLowerCase().includes(q))) return false;
-    }
-    return true;
-  });
+  const filtered = useMemo(
+    () => items.filter((it) => {
+      if (filterCat !== 'ALL' && it.type !== filterCat) return false;
+      if (filterState === 'ACTIVE' && !it.active) return false;
+      if (filterState === 'INACTIVE' && it.active) return false;
+      if (query) {
+        const q = query.toLowerCase();
+        if (!(it.title.toLowerCase().includes(q) ||
+              it.content.toLowerCase().includes(q) ||
+              it.refCode.toLowerCase().includes(q))) return false;
+      }
+      return true;
+    }),
+    [items, filterCat, filterState, query]
+  );
+
+  // Reset a página 1 cuando cambien filtros o tamaño.
+  React.useEffect(() => {
+    setPage(1);
+  }, [filterCat, filterState, query, pageSize]);
+
+  const pagedItems = useMemo(
+    () => filtered.slice((page - 1) * pageSize, page * pageSize),
+    [filtered, page, pageSize]
+  );
 
   const selected: Card | null = creating
     ? (creating as Card)
@@ -812,7 +971,7 @@ export default function AdminPanel({
         />
 
         <AdminList
-          items={filtered}
+          items={pagedItems}
           selected={selected}
           onSelect={(it) => { setCreating(false); setSelectedId(it.id); }}
           onDelete={onDelete}
@@ -820,6 +979,10 @@ export default function AdminPanel({
           onCreate={startCreate}
           totalShown={filtered.length}
           totalAll={items.length}
+          page={page}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
         />
 
         <AdminEditor
