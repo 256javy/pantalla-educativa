@@ -1,5 +1,5 @@
 'use client';
-// ── EduDisplay · motor de pantalla (TV) ─────────────────────────────────
+// ── Pantalla Educativa · motor de pantalla (TV) ─────────────────────────
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CATEGORIES } from '@/lib/categories';
 import type { Card } from '@/lib/types';

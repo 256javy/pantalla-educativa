@@ -166,7 +166,7 @@ export default function ImportPage() {
         ? 'all'
         : Array.from(exportTypes).map((t) => t.toLowerCase()).join('-');
     a.href = url;
-    a.download = `edudisplay-cards-${typeTag}-${ts}.json`;
+    a.download = `pantalla-educativa-cards-${typeTag}-${ts}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -210,7 +210,7 @@ export default function ImportPage() {
           <div style={logoStyle}>
             <Icon name="logo" size={20} />
           </div>
-          <span style={{ fontWeight: 700, letterSpacing: '-0.01em' }}>EduDisplay</span>
+          <span style={{ fontWeight: 700, letterSpacing: '-0.01em' }}>Pantalla Educativa</span>
           <span style={{ color: '#94A3B8', fontSize: 13, marginLeft: 8 }}>· importar</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

@@ -22,7 +22,7 @@ body {
   font-family: var(--font-cormorant), "Times New Roman", serif;
 }
 
-/* ── Animaciones globales EduDisplay ─────────────────────────────────── */
+/* ── Animaciones globales Pantalla Educativa ─────────────────────────── */
 
 @keyframes edu-fade-in {
   from {

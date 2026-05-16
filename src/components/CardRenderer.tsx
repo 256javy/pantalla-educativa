@@ -1,5 +1,5 @@
 'use client';
-// ── EduDisplay · Variantes de tarjeta para TV ────────────────────────────
+// ── Pantalla Educativa · Variantes de tarjeta para TV ────────────────────
 import React from 'react';
 import { splitHighlighted, CATEGORIES } from '@/lib/categories';
 import type { Card, Category } from '@/lib/types';

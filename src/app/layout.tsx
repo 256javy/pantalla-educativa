@@ -23,7 +23,7 @@ const cormorant = Cormorant_Garamond({
 });
 
 export const metadata: Metadata = {
-  title: "EduDisplay",
+  title: "Pantalla Educativa",
   description: "Pantalla educativa para el salón — ciencia, historia, frases y quiz.",
 };
 

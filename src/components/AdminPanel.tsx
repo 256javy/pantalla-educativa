@@ -1,5 +1,5 @@
 'use client';
-// ── EduDisplay · Admin Desktop (CRUD) ─────────────────────────────────────
+// ── Pantalla Educativa · Admin Desktop (CRUD) ───────────────────────────
 import React, { useMemo, useState } from 'react';
 import { CATEGORIES, FREQ_LABEL, FREQ_BARS } from '@/lib/categories';
 import type { Card, CardType, Frequency } from '@/lib/types';
@@ -44,7 +44,7 @@ function AdminTopBar({ user, onLogout, onOpenTV, onOpenImport }: AdminTopBarProp
         >
           <Icon name="logo" size={20} />
         </div>
-        <span style={{ fontWeight: 700, letterSpacing: '-0.01em' }}>EduDisplay</span>
+        <span style={{ fontWeight: 700, letterSpacing: '-0.01em' }}>Pantalla Educativa</span>
         <span style={{ color: '#94A3B8', fontSize: 13, marginLeft: 8 }}>· panel</span>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -199,8 +199,6 @@ function AdminSidebar({ filterCat, setFilterCat, filterState, setFilterState, co
       </div>
 
       <div style={{ marginTop: 'auto', fontSize: 12, color: '#94A3B8', lineHeight: 1.5 }}>
-        Sincronizado con<br />
-        <strong style={{ color: '#475569', fontWeight: 600 }}>Firebase</strong> · onSnapshot<br />
         <span style={{ color: '#10B981' }}>● en línea</span>
       </div>
     </aside>
@@ -681,7 +679,7 @@ interface AdminPanelProps {
 }
 
 export default function AdminPanel({
-  user = { email: 'familia@edudisplay.app' },
+  user = { email: 'sin-sesion' },
   onLogout,
   onOpenTV,
   onOpenImport,

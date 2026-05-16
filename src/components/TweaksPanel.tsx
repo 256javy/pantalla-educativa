@@ -1,6 +1,7 @@
 'use client';
-// ── EduDisplay · TweaksPanel + controles ─────────────────────────────────
-// Adaptado del prototipo: persiste en localStorage, no usa mensajes al host.
+// ── Pantalla Educativa · TweaksPanel + controles ─────────────────────────
+// Persiste ajustes en localStorage. Hoy no se usa en /display pero se
+// mantiene exportado por si en el futuro vuelve a integrarse.
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 const __TWEAKS_STYLE = `
@@ -68,7 +69,7 @@ const __TWEAKS_STYLE = `
 `;
 
 // ── useTweaks ─────────────────────────────────────────────────────────────
-const LS_KEY = 'edudisplay-tweaks';
+const LS_KEY = 'pantalla-educativa-tweaks';
 
 export function useTweaks<T extends object>(
   defaults: T

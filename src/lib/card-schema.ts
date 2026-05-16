@@ -6,8 +6,8 @@ import type { Card, CardType, Frequency } from './types';
 
 export const CARD_JSON_SCHEMA = {
   $schema: 'http://json-schema.org/draft-07/schema#',
-  $id: 'https://edudisplay.local/schemas/card.json',
-  title: 'EduDisplay Card',
+  $id: 'https://pantalla-educativa.local/schemas/card.json',
+  title: 'Pantalla Educativa Card',
   description:
     'Tarjeta educativa para la pantalla. El input para importar es un array de objetos sin id (Firestore lo asigna). NO incluyas refCode: el servidor lo genera automáticamente garantizando unicidad.',
   type: 'array',

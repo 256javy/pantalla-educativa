@@ -1,4 +1,4 @@
-// ── EduDisplay · paleta por categoría + helpers ─────────────────────────
+// ── Pantalla Educativa · paleta por categoría + helpers ─────────────────
 import type { CardType, Category, Frequency } from './types';
 
 export const CATEGORIES: Record<CardType, Category> = {

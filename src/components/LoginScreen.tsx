@@ -1,5 +1,5 @@
 'use client';
-// ── EduDisplay · Login (Google Sign-In con whitelist) ─────────────────────
+// ── Pantalla Educativa · Login (Google Sign-In con whitelist) ───────────
 import React, { useState } from 'react';
 import { GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
@@ -84,7 +84,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
             <Icon name="logo" size={26} />
           </div>
           <div>
-            <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: '-0.01em' }}>EduDisplay</div>
+            <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: '-0.01em' }}>Pantalla Educativa</div>
             <div style={{ fontSize: 12, color: '#64748B', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
               Panel de administración
             </div>
@@ -145,11 +145,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 24, color: '#475569', fontSize: 12 }}>
-          <span>v0.4.1 · 2026</span>
-          <span>•</span>
-          <span>Firebase Firestore · onSnapshot</span>
-        </div>
+        <div />
       </div>
 
       {/* lado derecho · sign-in con Google */}
@@ -165,7 +161,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
         >
           <div>
             <h1 style={{ margin: 0, fontSize: 36, fontWeight: 700, letterSpacing: '-0.02em' }}>
-              Bienvenida de vuelta
+              Bienvenido de vuelta
             </h1>
             <p style={{ margin: '8px 0 0', color: '#64748B', fontSize: 15 }}>
               Inicia sesión con tu cuenta de Google autorizada para administrar la pantalla.

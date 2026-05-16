@@ -1,4 +1,4 @@
-// ── EduDisplay · Iconografía mínima ─────────────────────────────────────
+// ── Pantalla Educativa · Iconografía mínima ─────────────────────────────
 // SVGs simples 24×24, stroke-only, currentColor.
 import React from 'react';
 
