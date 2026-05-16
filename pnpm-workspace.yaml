@@ -1,0 +1,8 @@
+# pnpm 11 config — workspace settings and trusted build dependencies.
+# Aprobamos los postinstall de paquetes con binarios nativos (sharp/esbuild)
+# y los SDK que generan código (protobufjs, @firebase/util).
+allowBuilds:
+  '@firebase/util': true
+  esbuild: true
+  protobufjs: true
+  sharp: true
