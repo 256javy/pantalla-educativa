@@ -2,6 +2,7 @@
 // ── /display — Vista pública TV (carrusel) ───────────────────────────────
 import { useCards } from '@/lib/use-cards';
 import { SEED } from '@/lib/seed-data';
+import { useWakeLock } from '@/lib/use-wake-lock';
 import TVDisplay, { type TVTweaks } from '@/components/TVDisplay';
 import ZoomControl, { useZoom } from '@/components/ZoomControl';
 import type { Card } from '@/lib/types';
@@ -19,6 +20,7 @@ export default function DisplayPage() {
   const { cards, loading } = useCards({ onlyActive: true });
   const items = !loading && cards.length > 0 ? cards : SEED_WITH_IDS;
   const [zoom, setZoom] = useZoom();
+  useWakeLock(); // mantiene la pantalla del dispositivo encendida
 
   // El "viewport interno" se simula agrandando el wrapper inversamente
   // al zoom y luego escalándolo. zoom < 1 → más espacio interno (más cabe);
