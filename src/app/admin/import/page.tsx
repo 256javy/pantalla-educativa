@@ -10,8 +10,10 @@ import {
   CARD_JSON_SCHEMA,
   parseImportPayload,
   assignUniqueRefCode,
+  CARD_TYPES,
   type ParsedItem,
 } from '@/lib/card-schema';
+import type { CardType } from '@/lib/types';
 
 type ImportStatus = 'idle' | 'importing' | 'done';
 
@@ -112,8 +114,31 @@ export default function ImportPage() {
     setStatus('done');
   };
 
+  // ── Export filters ─────────────────────────────────────────────────────
+  const [exportTypes, setExportTypes] = useState<Set<CardType>>(
+    () => new Set(CARD_TYPES)
+  );
+  const [exportOnlyActive, setExportOnlyActive] = useState(false);
+  const [exportCopied, setExportCopied] = useState(false);
+
+  const toggleExportType = (t: CardType) => {
+    setExportTypes((prev) => {
+      const next = new Set(prev);
+      if (next.has(t)) next.delete(t);
+      else next.add(t);
+      return next;
+    });
+  };
+
+  const exportFiltered = useMemo(
+    () => existing.filter((c) =>
+      exportTypes.has(c.type) && (!exportOnlyActive || c.active)
+    ),
+    [existing, exportTypes, exportOnlyActive]
+  );
+
   const buildExportPayload = () =>
-    existing.map((c) => ({
+    exportFiltered.map((c) => ({
       type: c.type,
       title: c.title,
       content: c.content,
@@ -129,15 +154,18 @@ export default function ImportPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    const typeTag =
+      exportTypes.size === CARD_TYPES.length
+        ? 'all'
+        : Array.from(exportTypes).map((t) => t.toLowerCase()).join('-');
     a.href = url;
-    a.download = `edudisplay-cards-${ts}.json`;
+    a.download = `edudisplay-cards-${typeTag}-${ts}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
 
-  const [exportCopied, setExportCopied] = useState(false);
   const copyExport = async () => {
     await navigator.clipboard.writeText(JSON.stringify(buildExportPayload(), null, 2));
     setExportCopied(true);
@@ -211,17 +239,79 @@ export default function ImportPage() {
                 Exportar contenido actual
               </h3>
               <span style={{ fontSize: 12, color: '#94A3B8' }}>
-                {existing.length} tarjeta{existing.length === 1 ? '' : 's'} en Firestore
+                {existing.length} en Firestore
               </span>
             </div>
-            <p style={{ fontSize: 12, color: '#64748B', margin: '4px 0 10px', lineHeight: 1.5 }}>
-              JSON listo para reimportar (sin <code>id</code>) y útil para dar contexto al modelo y mantener el estilo.
+            <p style={{ fontSize: 12, color: '#64748B', margin: '4px 0 12px', lineHeight: 1.5 }}>
+              Filtra por categoría para dar al modelo solo el estilo que necesita.
+              Útil cuando quieres más cards de un tipo sin contaminar con los demás.
             </p>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={handleExport} style={primaryBtnStyle} disabled={existing.length === 0}>
-                <Icon name="check" size={14} /> Descargar .json
+
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
+              {CARD_TYPES.map((t) => {
+                const cat = CATEGORIES[t];
+                const selected = exportTypes.has(t);
+                const count = existing.filter((c) => c.type === t).length;
+                return (
+                  <button
+                    key={t}
+                    onClick={() => toggleExportType(t)}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 6,
+                      padding: '6px 12px', borderRadius: 999,
+                      border: `1px solid ${selected ? cat.accent : '#E2E8F0'}`,
+                      background: selected ? cat.bg : '#fff',
+                      color: selected ? cat.ink : '#64748B',
+                      fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                      transition: 'all 0.12s',
+                    }}
+                  >
+                    <Icon name={cat.glyph} size={12} strokeWidth={2.4} />
+                    {cat.label}
+                    <span style={{
+                      fontSize: 11, padding: '1px 6px', borderRadius: 99,
+                      background: selected ? cat.accent : '#F1F5F9',
+                      color: selected ? '#fff' : '#94A3B8',
+                      fontVariantNumeric: 'tabular-nums',
+                    }}>
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 12, fontSize: 12 }}>
+              <button
+                onClick={() => setExportTypes(new Set(CARD_TYPES))}
+                style={miniLinkStyle}
+                disabled={exportTypes.size === CARD_TYPES.length}
+              >
+                Todas
               </button>
-              <button onClick={copyExport} style={ghostBtnStyle} disabled={existing.length === 0}>
+              <button
+                onClick={() => setExportTypes(new Set())}
+                style={miniLinkStyle}
+                disabled={exportTypes.size === 0}
+              >
+                Ninguna
+              </button>
+              <span style={{ color: '#E2E8F0' }}>·</span>
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#475569', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={exportOnlyActive}
+                  onChange={(e) => setExportOnlyActive(e.target.checked)}
+                />
+                Solo activas
+              </label>
+            </div>
+
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={handleExport} style={primaryBtnStyle} disabled={exportFiltered.length === 0}>
+                <Icon name="check" size={14} /> Descargar {exportFiltered.length}
+              </button>
+              <button onClick={copyExport} style={ghostBtnStyle} disabled={exportFiltered.length === 0}>
                 <Icon name={exportCopied ? 'check' : 'edit'} size={14} />
                 {exportCopied ? 'Copiado' : 'Copiar al portapapeles'}
               </button>
@@ -510,6 +600,11 @@ const resultBoxStyle: React.CSSProperties = {
 const exportBoxStyle: React.CSSProperties = {
   marginTop: 16, padding: 14, borderRadius: 12,
   background: '#fff', border: '1px solid #E2E8F0',
+};
+const miniLinkStyle: React.CSSProperties = {
+  padding: 0, border: 'none', background: 'transparent',
+  color: '#0f172a', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+  textDecoration: 'underline', textUnderlineOffset: 2,
 };
 const loadingStyle: React.CSSProperties = {
   position: 'fixed', inset: 0, display: 'grid', placeItems: 'center',
