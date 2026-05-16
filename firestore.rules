@@ -1,0 +1,10 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // DEVELOPMENT ONLY: permissive rules for emulator testing
+    // Replace with proper authentication rules before deploying to production
+    match /cards/{document=**} {
+      allow read, write: if true;
+    }
+  }
+}
