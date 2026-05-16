@@ -718,6 +718,8 @@ interface TVDisplayProps {
   showControls?: boolean;
   showNextUp?: boolean;
   autostart?: boolean;
+  /** Se llama cuando el engine vuelve al primer item (wrap-around). */
+  onLoopComplete?: () => void;
 }
 
 export default function TVDisplay({
@@ -727,6 +729,7 @@ export default function TVDisplay({
   showControls = true,
   showNextUp = true,
   autostart = true,
+  onLoopComplete,
 }: TVDisplayProps) {
   const [paused, setPaused] = useState(!autostart);
   const manual = tweaks.demoMode === 'manual';
@@ -739,13 +742,28 @@ export default function TVDisplay({
   );
   const activeItems = quiz.session ? (allQuizes.length ? allQuizes : items) : items;
 
+  const handleAdvance = useCallback(() => {
+    if (quiz.session) quiz.bumpQuestion();
+  }, [quiz]);
+
   const eng = useDisplayEngine({
     items: activeItems,
     rotationSeconds: tweaks.rotationSeconds,
     paused,
     manual,
-    onAdvance: quiz.session ? quiz.bumpQuestion : null,
+    onAdvance: handleAdvance,
   });
+
+  // Detección de wrap-around: cuando el index cae de N-1 a 0 (no en el
+  // primer mount con index=0).
+  const prevIndexRef = useRef(eng.index);
+  useEffect(() => {
+    const prev = prevIndexRef.current;
+    if (prev > eng.index) {
+      onLoopComplete?.();
+    }
+    prevIndexRef.current = eng.index;
+  }, [eng.index, onLoopComplete]);
 
   const cat = CATEGORIES[eng.current.type];
   const variant = variantOverride || defaultVariantFor(eng.current.type);

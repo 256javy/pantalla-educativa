@@ -1,19 +1,8 @@
 rules_version = '2';
-
-// EduDisplay · reglas de Firestore
-//
-// Colección `cards`:
-//   - Lectura pública (el /display debe cargar sin friction).
-//   - Escritura solo si el usuario está autenticado y su email está en la
-//     whitelist hardcodeada abajo.
-//
-// IMPORTANTE: mantén esta lista sincronizada con NEXT_PUBLIC_ADMIN_EMAILS
-// del archivo .env.local / variables de entorno de Vercel. Si añades un
-// email allí, agrégalo también aquí y vuelve a publicar las reglas.
 service cloud.firestore {
   match /databases/{database}/documents {
     match /cards/{cardId} {
-      allow read: if true;
+      allow read: if true; // Permite que la pantalla pública lea las cards
       allow write: if request.auth != null
         && request.auth.token.email in [
           '256javiervillalba@gmail.com'
