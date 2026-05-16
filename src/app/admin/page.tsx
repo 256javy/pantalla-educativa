@@ -2,12 +2,14 @@
 // ── /admin ────────────────────────────────────────────────────────────────
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
+import { isAdminEmail } from '@/lib/admin-whitelist';
 import { useCards } from '@/lib/use-cards';
 import { SEED } from '@/lib/seed-data';
 import AdminPanel from '@/components/AdminPanel';
 import type { Card } from '@/lib/types';
 
-// Seed data with IDs for fallback
 const SEED_WITH_IDS: Card[] = SEED.map((card, i) => ({
   ...card,
   id: `c-${i + 1}`,
@@ -15,26 +17,29 @@ const SEED_WITH_IDS: Card[] = SEED.map((card, i) => ({
 
 export default function AdminPage() {
   const router = useRouter();
-  const [user, setUser] = useState<{ email: string } | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [checked, setChecked] = useState(false);
 
   useEffect(() => {
-    // Simple session guard — replace with real Firebase Auth check
-    try {
-      const stored = sessionStorage.getItem('edudisplay-user');
-      if (stored) {
-        setUser(JSON.parse(stored));
+    const unsub = onAuthStateChanged(auth, (u) => {
+      setChecked(true);
+      if (u && isAdminEmail(u.email)) {
+        setUser(u);
       } else {
-        router.push('/admin/login');
+        if (u) {
+          // Autenticado pero sin permisos → out
+          void signOut(auth);
+        }
+        router.replace('/admin/login');
       }
-    } catch {
-      router.push('/admin/login');
-    }
+    });
+    return () => unsub();
   }, [router]);
 
   const { cards, loading } = useCards();
   const items = (!loading && cards.length > 0) ? cards : SEED_WITH_IDS;
 
-  if (!user) {
+  if (!checked || !user) {
     return (
       <div style={{
         position: 'fixed', inset: 0, display: 'grid', placeItems: 'center',
@@ -46,23 +51,18 @@ export default function AdminPage() {
     );
   }
 
-  const handleLogout = () => {
-    try { sessionStorage.removeItem('edudisplay-user'); } catch {}
+  const handleLogout = async () => {
+    await signOut(auth);
     router.push('/admin/login');
   };
 
-  const handleOpenTV = () => {
-    router.push('/display');
-  };
-
-  const handleOpenImport = () => {
-    router.push('/admin/import');
-  };
+  const handleOpenTV = () => router.push('/display');
+  const handleOpenImport = () => router.push('/admin/import');
 
   return (
     <div style={{ position: 'fixed', inset: 0 }}>
       <AdminPanel
-        user={user}
+        user={{ email: user.email ?? 'sin-email' }}
         onLogout={handleLogout}
         onOpenTV={handleOpenTV}
         onOpenImport={handleOpenImport}

@@ -1,15 +1,20 @@
 'use client';
 // ── /admin/login ──────────────────────────────────────────────────────────
 import { useRouter } from 'next/navigation';
+import { signOut } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 import LoginScreen from '@/components/LoginScreen';
+import { isAdminEmail } from '@/lib/admin-whitelist';
 
 export default function AdminLoginPage() {
   const router = useRouter();
 
-  const handleLogin = (user: { email: string }) => {
-    // TODO: replace with real Firebase Auth — store session in cookie/localStorage
-    if (typeof window !== 'undefined') {
-      sessionStorage.setItem('edudisplay-user', JSON.stringify(user));
+  const handleLogin = async (user: { email: string; uid: string }) => {
+    if (!isAdminEmail(user.email)) {
+      await signOut(auth);
+      throw new Error(
+        `La cuenta ${user.email} no está autorizada para acceder al panel.`
+      );
     }
     router.push('/admin');
   };

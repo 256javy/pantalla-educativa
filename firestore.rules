@@ -3,18 +3,21 @@ rules_version = '2';
 // EduDisplay · reglas de Firestore
 //
 // Colección `cards`:
-//   - Lectura pública (el /display debe poder cargar sin friction).
-//   - Escritura solo con usuario autenticado (sign-in anónimo del admin).
+//   - Lectura pública (el /display debe cargar sin friction).
+//   - Escritura solo si el usuario está autenticado y su email está en la
+//     whitelist hardcodeada abajo.
 //
-// El sign-in anónimo se hace automáticamente desde el cliente (ver
-// web/src/lib/firebase.ts). Cualquiera con la URL puede igualmente
-// autenticarse anónimo y escribir → adecuado para una pantalla familiar,
-// no para una API pública.
+// IMPORTANTE: mantén esta lista sincronizada con NEXT_PUBLIC_ADMIN_EMAILS
+// del archivo .env.local / variables de entorno de Vercel. Si añades un
+// email allí, agrégalo también aquí y vuelve a publicar las reglas.
 service cloud.firestore {
   match /databases/{database}/documents {
     match /cards/{cardId} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if request.auth != null
+        && request.auth.token.email in [
+          'javier.villalba@kunfupay.com'
+        ];
     }
   }
 }

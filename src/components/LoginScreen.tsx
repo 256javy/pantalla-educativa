@@ -1,73 +1,47 @@
 'use client';
-// ── EduDisplay · Login ────────────────────────────────────────────────────
+// ── EduDisplay · Login (Google Sign-In con whitelist) ─────────────────────
 import React, { useState } from 'react';
+import { GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 import Icon from './Icon';
 
 interface LoginScreenProps {
-  onLogin?: (user: { email: string }) => void;
-}
-
-const inputStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '14px 14px 14px 42px',
-  borderRadius: 12,
-  border: '1px solid #E2E8F0',
-  background: '#fff',
-  fontSize: 15,
-  color: '#0f172a',
-  outline: 'none',
-  fontFamily: 'inherit',
-  transition: 'border-color 0.15s, box-shadow 0.15s',
-};
-
-interface FieldProps {
-  label: string;
-  icon: string;
-  children: React.ReactNode;
-}
-
-function Field({ label, icon, children }: FieldProps) {
-  return (
-    <label style={{ display: 'block', position: 'relative' }}>
-      <div style={{ fontSize: 13, fontWeight: 500, color: '#475569', marginBottom: 8 }}>{label}</div>
-      <div style={{ position: 'relative' }}>
-        <span
-          style={{
-            position: 'absolute',
-            left: 14,
-            top: '50%',
-            transform: 'translateY(-50%)',
-            color: '#94A3B8',
-          }}
-        >
-          <Icon name={icon} size={18} />
-        </span>
-        {children}
-      </div>
-    </label>
-  );
+  // Recibe el email del usuario autenticado; el parent decide si lo acepta
+  // (whitelist) o lo rechaza llamando `reject()` para forzar signOut.
+  onLogin?: (user: { email: string; uid: string }) => Promise<void> | void;
 }
 
 export default function LoginScreen({ onLogin }: LoginScreenProps) {
-  const [email, setEmail] = useState('familia@edudisplay.app');
-  const [password, setPassword] = useState('•••••••••');
-  const [showPwd, setShowPwd] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleGoogleSignIn = async () => {
     setError('');
     setLoading(true);
-    setTimeout(() => {
-      if (email && password) {
-        setLoading(false);
-        onLogin?.({ email });
-      } else {
-        setLoading(false);
-        setError('Credenciales inválidas');
+    try {
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' });
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+      if (!user.email) {
+        await signOut(auth);
+        setError('La cuenta de Google no expone email. Usa otra cuenta.');
+        return;
       }
-    }, 700);
+      await onLogin?.({ email: user.email, uid: user.uid });
+    } catch (err) {
+      const code = (err as { code?: string }).code;
+      if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
+        setError('');
+      } else if (code === 'auth/unauthorized-domain') {
+        setError('Dominio no autorizado en Firebase Auth. Añádelo en la consola.');
+      } else {
+        const message = err instanceof Error ? err.message : 'Error al iniciar sesión';
+        setError(message);
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -178,16 +152,15 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
         </div>
       </div>
 
-      {/* lado derecho · formulario */}
+      {/* lado derecho · sign-in con Google */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 56 }}>
-        <form
-          onSubmit={submit}
+        <div
           style={{
             width: '100%',
             maxWidth: 420,
             display: 'flex',
             flexDirection: 'column',
-            gap: 26,
+            gap: 28,
           }}
         >
           <div>
@@ -195,111 +168,80 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
               Bienvenida de vuelta
             </h1>
             <p style={{ margin: '8px 0 0', color: '#64748B', fontSize: 15 }}>
-              Inicia sesión para administrar la pantalla del salón.
+              Inicia sesión con tu cuenta de Google autorizada para administrar la pantalla.
             </p>
           </div>
 
-          <Field label="Correo" icon="mail">
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="tu@correo.com"
-              style={inputStyle}
-              autoComplete="email"
-            />
-          </Field>
-
-          <Field label="Contraseña" icon="lock">
-            <input
-              type={showPwd ? 'text' : 'password'}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              style={{ ...inputStyle, paddingRight: 44 }}
-              autoComplete="current-password"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPwd((s) => !s)}
-              style={{
-                position: 'absolute',
-                right: 10,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                background: 'none',
-                border: 'none',
-                color: '#64748B',
-                cursor: 'pointer',
-                padding: 6,
-              }}
-              aria-label={showPwd ? 'ocultar' : 'mostrar'}
-            >
-              <Icon name={showPwd ? 'eye-off' : 'eye'} size={18} />
-            </button>
-          </Field>
-
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: -8 }}>
-            <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#475569' }}>
-              <input type="checkbox" defaultChecked /> Recordar este equipo
-            </label>
-            <a href="#" style={{ color: '#2563EB', fontSize: 13, fontWeight: 500, textDecoration: 'none' }}>
-              ¿Olvidaste tu contraseña?
-            </a>
-          </div>
-
           {error && (
-            <div style={{ color: '#E11D48', fontSize: 13, fontWeight: 500 }}>
+            <div
+              style={{
+                padding: '12px 14px',
+                borderRadius: 10,
+                background: '#FEF2F2',
+                border: '1px solid #FECACA',
+                color: '#991B1B',
+                fontSize: 13,
+                fontWeight: 500,
+              }}
+            >
               {error}
             </div>
           )}
 
           <button
-            type="submit"
+            type="button"
+            onClick={handleGoogleSignIn}
             disabled={loading}
             style={{
               padding: '14px 18px',
               borderRadius: 12,
-              border: 'none',
-              background: loading ? '#94A3B8' : '#0f172a',
-              color: '#fff',
+              border: '1px solid #E2E8F0',
+              background: loading ? '#F1F5F9' : '#fff',
+              color: '#0f172a',
               fontWeight: 600,
               fontSize: 15,
-              letterSpacing: '0.01em',
               cursor: loading ? 'wait' : 'pointer',
               display: 'inline-flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: 10,
-              transition: 'background 0.15s',
+              gap: 12,
+              transition: 'background 0.15s, border-color 0.15s',
             }}
           >
-            {loading ? 'Entrando…' : <><span>Entrar al panel</span> <Icon name="next" size={16} strokeWidth={2.4} /></>}
+            <GoogleGlyph />
+            {loading ? 'Conectando…' : 'Continuar con Google'}
           </button>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, color: '#94A3B8', fontSize: 12 }}>
-            <div style={{ flex: 1, height: 1, background: '#E2E8F0' }} />
-            <span>o</span>
-            <div style={{ flex: 1, height: 1, background: '#E2E8F0' }} />
-          </div>
-
-          <button
-            type="button"
-            onClick={() => onLogin?.({ email: 'demo@edudisplay.app' })}
-            style={{
-              padding: '12px 18px',
-              borderRadius: 12,
-              border: '1px solid #E2E8F0',
-              background: '#fff',
-              color: '#0f172a',
-              fontWeight: 500,
-              fontSize: 14,
-              cursor: 'pointer',
-            }}
-          >
-            Continuar como invitada (demo)
-          </button>
-        </form>
+          <p style={{ margin: 0, fontSize: 12, color: '#94A3B8', lineHeight: 1.5 }}>
+            Solo los emails declarados en la whitelist del proyecto pueden acceder.
+            Si tu cuenta no está autorizada, contacta al admin.
+          </p>
+        </div>
       </div>
     </div>
+  );
+}
+
+// Glifo Google oficial (4 colores) en SVG simple.
+function GoogleGlyph() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+      <path
+        fill="#4285F4"
+        d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"
+      />
+      <path
+        fill="#34A853"
+        d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M3.964 10.707A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.707V4.961H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.039l3.007-2.332z"
+      />
+      <path
+        fill="#EA4335"
+        d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z"
+      />
+    </svg>
   );
 }

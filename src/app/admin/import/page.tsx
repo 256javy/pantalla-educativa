@@ -2,6 +2,9 @@
 // ── /admin/import — Importar tarjetas desde JSON generado por IA ─────────
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
+import { isAdminEmail } from '@/lib/admin-whitelist';
 import { useCards } from '@/lib/use-cards';
 import { createCard } from '@/lib/cards-repo';
 import { CATEGORIES } from '@/lib/categories';
@@ -26,16 +29,20 @@ interface ImportResult {
 
 export default function ImportPage() {
   const router = useRouter();
-  const [user, setUser] = useState<{ email: string } | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [checked, setChecked] = useState(false);
 
   useEffect(() => {
-    try {
-      const stored = sessionStorage.getItem('edudisplay-user');
-      if (stored) setUser(JSON.parse(stored));
-      else router.push('/admin/login');
-    } catch {
-      router.push('/admin/login');
-    }
+    const unsub = onAuthStateChanged(auth, (u) => {
+      setChecked(true);
+      if (u && isAdminEmail(u.email)) {
+        setUser(u);
+      } else {
+        if (u) void signOut(auth);
+        router.replace('/admin/login');
+      }
+    });
+    return () => unsub();
   }, [router]);
 
   const { cards: existing } = useCards();
@@ -179,7 +186,7 @@ export default function ImportPage() {
     setTimeout(() => setCopied(false), 1800);
   };
 
-  if (!user) {
+  if (!checked || !user) {
     return (
       <div style={loadingStyle}>
         Cargando…
