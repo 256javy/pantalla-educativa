@@ -9,6 +9,7 @@ import Icon from '@/components/Icon';
 import {
   CARD_JSON_SCHEMA,
   parseImportPayload,
+  assignUniqueRefCode,
   type ParsedItem,
 } from '@/lib/card-schema';
 
@@ -75,22 +76,33 @@ export default function ImportPage() {
   const handleImport = async () => {
     setStatus('importing');
     setResults([]);
-    const toImport = items.filter(
-      (it) =>
-        it.result.ok &&
-        (!skipDuplicates || !existingRefCodes.has(it.result.card.refCode))
-    );
+
+    // taken = refCodes ya en DB + los que se vayan asignando en esta tanda
+    const taken = new Set(existingRefCodes);
 
     const out: ImportResult[] = [];
-    for (const it of toImport) {
+    for (const it of items) {
       if (!it.result.ok) continue;
+      const draft = it.result.card;
+
+      // Salto duplicados explícitos (refCode provisto que ya existe en DB)
+      if (skipDuplicates && draft.refCode && existingRefCodes.has(draft.refCode)) {
+        continue;
+      }
+
+      // Si no trae refCode, asignar uno único; si trae uno único, respetarlo.
+      const refCode = draft.refCode && !taken.has(draft.refCode)
+        ? draft.refCode
+        : assignUniqueRefCode(draft.type, taken);
+      taken.add(refCode);
+
       try {
-        await createCard(it.result.card);
-        out.push({ index: it.index, refCode: it.result.card.refCode, ok: true });
+        await createCard({ ...draft, refCode });
+        out.push({ index: it.index, refCode, ok: true });
       } catch (err) {
         out.push({
           index: it.index,
-          refCode: it.result.card.refCode,
+          refCode,
           ok: false,
           error: err instanceof Error ? err.message : String(err),
         });
@@ -98,6 +110,38 @@ export default function ImportPage() {
     }
     setResults(out);
     setStatus('done');
+  };
+
+  const buildExportPayload = () =>
+    existing.map((c) => ({
+      type: c.type,
+      title: c.title,
+      content: c.content,
+      answer: c.answer,
+      refCode: c.refCode,
+      active: c.active,
+      frequency: c.frequency,
+    }));
+
+  const handleExport = () => {
+    const json = JSON.stringify(buildExportPayload(), null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    a.href = url;
+    a.download = `edudisplay-cards-${ts}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const [exportCopied, setExportCopied] = useState(false);
+  const copyExport = async () => {
+    await navigator.clipboard.writeText(JSON.stringify(buildExportPayload(), null, 2));
+    setExportCopied(true);
+    setTimeout(() => setExportCopied(false), 1800);
   };
 
   const copySchema = async () => {
@@ -118,8 +162,9 @@ export default function ImportPage() {
   const valid = items.filter((it) => it.result.ok);
   const invalid = items.filter((it) => !it.result.ok);
   const duplicates = valid.filter(
-    (it) => it.result.ok && existingRefCodes.has(it.result.card.refCode)
+    (it) => it.result.ok && it.result.card.refCode !== undefined && existingRefCodes.has(it.result.card.refCode)
   );
+  const autoRefCode = valid.filter((it) => it.result.ok && !it.result.card.refCode);
   const toImportCount = skipDuplicates ? valid.length - duplicates.length : valid.length;
 
   return (
@@ -147,8 +192,8 @@ export default function ImportPage() {
           <header style={{ marginBottom: 14 }}>
             <h2 style={h2Style}>Esquema JSON</h2>
             <p style={subStyle}>
-              Pega este esquema al prompt del modelo de IA para que genere tarjetas válidas.
-              El input es un <strong>array</strong> de objetos sin <code>id</code>.
+              Pega este esquema al prompt del modelo para que genere tarjetas válidas.
+              Omite <code>refCode</code>: el servidor lo asigna sin colisiones.
             </p>
             <button onClick={copySchema} style={primaryBtnStyle}>
               <Icon name={copied ? 'check' : 'edit'} size={14} />
@@ -158,6 +203,30 @@ export default function ImportPage() {
           <pre style={preStyle}>
             <code>{JSON.stringify(CARD_JSON_SCHEMA, null, 2)}</code>
           </pre>
+
+          {/* Export block */}
+          <div style={exportBoxStyle}>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8, marginBottom: 4 }}>
+              <h3 style={{ fontSize: 14, fontWeight: 700, margin: 0, letterSpacing: '-0.01em' }}>
+                Exportar contenido actual
+              </h3>
+              <span style={{ fontSize: 12, color: '#94A3B8' }}>
+                {existing.length} tarjeta{existing.length === 1 ? '' : 's'} en Firestore
+              </span>
+            </div>
+            <p style={{ fontSize: 12, color: '#64748B', margin: '4px 0 10px', lineHeight: 1.5 }}>
+              JSON listo para reimportar (sin <code>id</code>) y útil para dar contexto al modelo y mantener el estilo.
+            </p>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={handleExport} style={primaryBtnStyle} disabled={existing.length === 0}>
+                <Icon name="check" size={14} /> Descargar .json
+              </button>
+              <button onClick={copyExport} style={ghostBtnStyle} disabled={existing.length === 0}>
+                <Icon name={exportCopied ? 'check' : 'edit'} size={14} />
+                {exportCopied ? 'Copiado' : 'Copiar al portapapeles'}
+              </button>
+            </div>
+          </div>
         </section>
 
         {/* Input + Results column */}
@@ -222,6 +291,7 @@ export default function ImportPage() {
                 <SummaryPill label="Válidas" value={valid.length} color="#059669" />
                 <SummaryPill label="Inválidas" value={invalid.length} color="#DC2626" />
                 <SummaryPill label="Duplicadas" value={duplicates.length} color="#CA8A04" />
+                <SummaryPill label="Auto refCode" value={autoRefCode.length} color="#7C3AED" />
                 <SummaryPill label="A importar" value={toImportCount} color="#2563EB" />
               </div>
 
@@ -231,7 +301,11 @@ export default function ImportPage() {
                   <ItemRow
                     key={it.index}
                     item={it}
-                    duplicate={it.result.ok && existingRefCodes.has(it.result.card.refCode)}
+                    duplicate={
+                      it.result.ok &&
+                      it.result.card.refCode !== undefined &&
+                      existingRefCodes.has(it.result.card.refCode)
+                    }
                   />
                 ))}
               </div>
@@ -303,10 +377,11 @@ function SummaryPill({ label, value, color }: { label: string; value: number; co
 
 function ItemRow({ item, duplicate }: { item: ParsedItem; duplicate: boolean }) {
   const ok = item.result.ok;
-  const refCode = item.refCode ?? '—';
+  const card = ok && item.result.ok ? item.result.card : null;
+  const auto = ok && card && !card.refCode;
+  const refCodeDisplay = auto ? 'auto' : (card?.refCode ?? item.refCode ?? '—');
   const title = item.title ?? '(sin título)';
-  const type = ok && item.result.ok ? item.result.card.type : undefined;
-  const cat = type ? CATEGORIES[type] : null;
+  const cat = card ? CATEGORIES[card.type] : null;
 
   return (
     <div style={{
@@ -326,8 +401,13 @@ function ItemRow({ item, duplicate }: { item: ParsedItem; duplicate: boolean }) 
       }}>
         <Icon name={ok ? 'check' : 'trash'} size={14} strokeWidth={2.4} />
       </div>
-      <code style={{ fontSize: 13, color: cat?.accent ?? '#64748B', fontWeight: 600 }}>
-        {refCode}
+      <code style={{
+        fontSize: 13,
+        color: auto ? '#7C3AED' : (cat?.accent ?? '#64748B'),
+        fontWeight: 600,
+        fontStyle: auto ? 'italic' : 'normal',
+      }}>
+        {refCodeDisplay}
       </code>
       <div style={{ minWidth: 0 }}>
         <div style={{ fontSize: 14, fontWeight: 600, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -341,6 +421,11 @@ function ItemRow({ item, duplicate }: { item: ParsedItem; duplicate: boolean }) 
         {ok && duplicate && (
           <div style={{ fontSize: 12, color: '#CA8A04', marginTop: 2 }}>
             Duplicado: ya existe una card con este refCode
+          </div>
+        )}
+        {ok && auto && !duplicate && (
+          <div style={{ fontSize: 12, color: '#7C3AED', marginTop: 2 }}>
+            refCode se asignará al importar
           </div>
         )}
       </div>
@@ -382,9 +467,9 @@ const subStyle: React.CSSProperties = {
   fontSize: 13, color: '#64748B', margin: '0 0 12px', lineHeight: 1.5,
 };
 const preStyle: React.CSSProperties = {
-  flex: 1, margin: 0, padding: 16, borderRadius: 12, background: '#0f172a', color: '#E2E8F0',
+  margin: 0, padding: 16, borderRadius: 12, background: '#0f172a', color: '#E2E8F0',
   fontFamily: 'JetBrains Mono, monospace', fontSize: 12, lineHeight: 1.55,
-  overflow: 'auto', maxHeight: 'calc(100vh - 220px)',
+  overflow: 'auto', maxHeight: '50vh',
 };
 const textareaStyle: React.CSSProperties = {
   width: '100%', minHeight: 200, padding: 12, borderRadius: 10,
@@ -421,6 +506,10 @@ const listStyle: React.CSSProperties = {
 const resultBoxStyle: React.CSSProperties = {
   marginTop: 18, padding: 14, borderRadius: 10,
   background: '#F0FDF4', color: '#064E3B', border: '1px solid #BBF7D0', fontSize: 14,
+};
+const exportBoxStyle: React.CSSProperties = {
+  marginTop: 16, padding: 14, borderRadius: 12,
+  background: '#fff', border: '1px solid #E2E8F0',
 };
 const loadingStyle: React.CSSProperties = {
   position: 'fixed', inset: 0, display: 'grid', placeItems: 'center',

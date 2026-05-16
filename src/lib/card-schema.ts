@@ -9,11 +9,11 @@ export const CARD_JSON_SCHEMA = {
   $id: 'https://edudisplay.local/schemas/card.json',
   title: 'EduDisplay Card',
   description:
-    'Una tarjeta educativa que se mostrará en la pantalla. El input para importar es un array de objetos sin id (Firestore lo genera).',
+    'Tarjeta educativa para la pantalla. El input para importar es un array de objetos sin id (Firestore lo asigna). NO incluyas refCode: el servidor lo genera automáticamente garantizando unicidad.',
   type: 'array',
   items: {
     type: 'object',
-    required: ['type', 'title', 'content', 'refCode', 'active', 'frequency'],
+    required: ['type', 'title', 'content', 'answer', 'active', 'frequency'],
     additionalProperties: false,
     properties: {
       type: {
@@ -41,12 +41,6 @@ export const CARD_JSON_SCHEMA = {
         description:
           'Solo para QUIZ: la respuesta que aparece tras los 15s. En FACT/QUOTE/HISTORY/HUMOR debe ser "" (string vacío).',
       },
-      refCode: {
-        type: 'string',
-        pattern: '^[AHQZX][0-9]{2}$',
-        description:
-          'Código único de 3 caracteres. Prefijo según tipo: A=FACT, H=HISTORY, Q=QUOTE, Z=QUIZ, X=HUMOR. Ej: A20, H07, Z03.',
-      },
       active: {
         type: 'boolean',
         description: 'true para que la tarjeta entre en la rotación.',
@@ -55,6 +49,12 @@ export const CARD_JSON_SCHEMA = {
         type: 'string',
         enum: ['LOW', 'MEDIUM', 'HIGH'],
         description: 'Cuán seguido debe aparecer (usado por el motor de rotación).',
+      },
+      refCode: {
+        type: 'string',
+        pattern: '^[AHQZX][0-9]{2,3}$',
+        description:
+          'OPCIONAL — omítelo y el servidor asignará uno único. Formato: prefijo (A=FACT, H=HISTORY, Q=QUOTE, Z=QUIZ, X=HUMOR) + 2 o 3 dígitos. Ej: A20, H07, Z003.',
       },
     },
   },
@@ -65,7 +65,6 @@ export const CARD_JSON_SCHEMA = {
         title: 'Cosmos',
         content: 'Una **galaxia** promedio contiene cien mil millones de estrellas.',
         answer: '',
-        refCode: 'A55',
         active: true,
         frequency: 'MEDIUM',
       },
@@ -74,7 +73,6 @@ export const CARD_JSON_SCHEMA = {
         title: 'Sacramentos',
         content: '¿Cuántos **sacramentos** reconoce la Iglesia Católica?',
         answer: 'Siete: Bautismo, Confirmación, Eucaristía, Reconciliación, Unción, Orden y Matrimonio.',
-        refCode: 'Z03',
         active: true,
         frequency: 'HIGH',
       },
@@ -95,7 +93,9 @@ const TYPE_PREFIX: Record<CardType, string> = {
 
 // ── Validation ───────────────────────────────────────────────────────────
 
-export type CardDraft = Omit<Card, 'id'>;
+// CardDraft: lo que el importador acepta. refCode opcional — si no viene,
+// se asigna en el momento del import con assignUniqueRefCode().
+export type CardDraft = Omit<Card, 'id' | 'refCode'> & { refCode?: string };
 
 export interface ValidationOk {
   ok: true;
@@ -108,6 +108,8 @@ export interface ValidationFail {
 }
 
 export type ValidationResult = ValidationOk | ValidationFail;
+
+export const REF_CODE_RE = /^[AHQZX][0-9]{2,3}$/;
 
 export function validateCardInput(input: unknown): ValidationResult {
   const errors: string[] = [];
@@ -149,17 +151,24 @@ export function validateCardInput(input: unknown): ValidationResult {
     }
   }
 
-  // refCode
-  if (typeof raw.refCode !== 'string') {
-    errors.push('`refCode` faltante');
-  } else if (!/^[AHQZX][0-9]{2}$/.test(raw.refCode)) {
-    errors.push(`\`refCode\` inválido: "${raw.refCode}" (formato esperado: A##, H##, Q##, Z##, X##)`);
-  } else if (typeof type === 'string' && CARD_TYPES.includes(type as CardType)) {
-    const expected = TYPE_PREFIX[type as CardType];
-    if (raw.refCode[0] !== expected) {
-      errors.push(
-        `prefijo de \`refCode\` no coincide con \`type\`: ${type} esperaba "${expected}", recibió "${raw.refCode[0]}"`
-      );
+  // refCode (opcional)
+  let refCode: string | undefined;
+  if (raw.refCode !== undefined) {
+    if (typeof raw.refCode !== 'string') {
+      errors.push('`refCode` debe ser string si se incluye');
+    } else if (!REF_CODE_RE.test(raw.refCode)) {
+      errors.push(`\`refCode\` inválido: "${raw.refCode}" (formato esperado: A##, H##, Q##, Z##, X## con 2-3 dígitos)`);
+    } else if (typeof type === 'string' && CARD_TYPES.includes(type as CardType)) {
+      const expected = TYPE_PREFIX[type as CardType];
+      if (raw.refCode[0] !== expected) {
+        errors.push(
+          `prefijo de \`refCode\` no coincide con \`type\`: ${type} esperaba "${expected}", recibió "${raw.refCode[0]}"`
+        );
+      } else {
+        refCode = raw.refCode;
+      }
+    } else {
+      refCode = raw.refCode as string;
     }
   }
 
@@ -191,11 +200,25 @@ export function validateCardInput(input: unknown): ValidationResult {
       title: (raw.title as string).trim(),
       content: (raw.content as string).trim(),
       answer: (raw.answer as string).trim(),
-      refCode: raw.refCode as string,
+      ...(refCode ? { refCode } : {}),
       active: raw.active as boolean,
       frequency: raw.frequency as Frequency,
     },
   };
+}
+
+// ── Generación de refCode únicos ─────────────────────────────────────────
+// Encuentra el siguiente refCode libre para un tipo dado, evitando
+// colisiones tanto con la DB como con los recién asignados en la tanda.
+export function assignUniqueRefCode(type: CardType, taken: Set<string>): string {
+  const prefix = TYPE_PREFIX[type];
+  // Primero 2 dígitos (01-99), luego 3 dígitos (100-999)
+  for (let n = 1; n <= 999; n++) {
+    const padded = n < 100 ? String(n).padStart(2, '0') : String(n);
+    const candidate = `${prefix}${padded}`;
+    if (!taken.has(candidate)) return candidate;
+  }
+  throw new Error(`Sin espacios libres para refCode con prefijo ${prefix}`);
 }
 
 // ── Item-level result (con índice y refCode si parseó algo) ──────────────
