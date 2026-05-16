@@ -28,6 +28,8 @@ interface DisplayEngineResult {
   current: Card;
   phase: 'idle' | 'question' | 'answer';
   progress: number;
+  phaseDur: number;
+  phaseStart: number;
   next: () => void;
   prev: () => void;
 }
@@ -97,7 +99,7 @@ export function useDisplayEngine({
   }, [items.length]);
   const prev = useCallback(() => setIndex((i) => (i - 1 + items.length) % items.length), [items.length]);
 
-  return { index, current, phase, progress, next, prev };
+  return { index, current, phase, progress, phaseDur, phaseStart, next, prev };
 }
 
 // ── useQuizSession ────────────────────────────────────────────────────────
@@ -771,6 +773,9 @@ export default function TVDisplay({
           item={eng.current}
           cat={cat}
           progress={eng.progress}
+          phaseDurationMs={eng.phaseDur}
+          phaseStart={eng.phaseStart}
+          paused={paused || manual}
           quizState={eng.current.type === 'QUIZ' && eng.phase !== 'idle' ? eng.phase : null}
           quizProgress={eng.progress}
           quizSeconds={quizSeconds}

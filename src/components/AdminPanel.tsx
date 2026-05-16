@@ -397,6 +397,8 @@ function LivePreview({ item, cat }: { item: Card; cat: import('@/lib/types').Cat
           item={{ ...item, content: item.content || 'Escribe el contenido…' }}
           cat={cat}
           progress={0.42}
+          phaseDurationMs={22000}
+          paused
           quizState={item.type === 'QUIZ' ? 'question' : null}
           quizProgress={0.5}
           quizSeconds={8}

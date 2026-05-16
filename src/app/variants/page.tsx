@@ -82,6 +82,8 @@ function VariantThumb({ variant, item }: VariantThumbProps) {
             item={item}
             cat={cat}
             progress={0.55}
+            phaseDurationMs={22000}
+            paused
             quizState={item.type === 'QUIZ' ? 'question' : null}
             quizProgress={0.55}
             quizSeconds={7}

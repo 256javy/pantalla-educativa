@@ -69,11 +69,15 @@ function CategoryBadge({ cat, large = false }: CategoryBadgeProps) {
 }
 
 interface ProgressBarProps {
-  progress: number;
+  durationMs: number;
+  // `slotKey` se aplica al wrapper externo (TVStage) que remontea por slot,
+  // así que este componente se monta fresco en cada nueva tarjeta y la
+  // animación CSS arranca naturalmente de 0% a 100%.
   accent: string;
+  paused?: boolean;
 }
 
-function ProgressBar({ progress, accent }: ProgressBarProps) {
+function ProgressBar({ durationMs, accent, paused }: ProgressBarProps) {
   return (
     <div
       style={{
@@ -88,11 +92,12 @@ function ProgressBar({ progress, accent }: ProgressBarProps) {
         style={{
           position: 'absolute',
           inset: 0,
-          width: `${Math.max(0, Math.min(1, progress)) * 100}%`,
+          width: '0%',
           background: accent,
           borderRadius: 999,
-          transition: 'width 0.15s linear',
           opacity: 0.65,
+          animation: `edu-progress-fill ${durationMs}ms linear forwards`,
+          animationPlayState: paused ? 'paused' : 'running',
         }}
       />
     </div>
@@ -136,15 +141,22 @@ function cardBase(cat: Category): React.CSSProperties {
 export interface CardProps {
   item: Card;
   cat: Category;
+  /** @deprecated mantenido por compat; las barras/anillos ahora animan vía CSS. */
   progress: number;
   fontScale: number;
+  /** Duración total de la fase actual en ms — pasada a animaciones CSS. */
+  phaseDurationMs: number;
+  /** Timestamp performance.now() del inicio de la fase actual (no se usa todavía pero ayuda a debug). */
+  phaseStart?: number;
+  paused?: boolean;
   quizState?: 'question' | 'answer' | null;
+  /** @deprecated mantenido por compat. */
   quizProgress?: number;
   quizSeconds?: number;
 }
 
 // ── 1 · CLASSIC ─────────────────────────────────────────────────────────
-function CardClassic({ item, cat, progress, fontScale }: CardProps) {
+function CardClassic({ item, cat, fontScale, phaseDurationMs, paused }: CardProps) {
   return (
     <div
       style={{
@@ -183,14 +195,14 @@ function CardClassic({ item, cat, progress, fontScale }: CardProps) {
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', alignItems: 'center', gap: 32 }}>
         <RefCode code={item.refCode} color={cat.ink} />
-        <ProgressBar progress={progress} accent={cat.accent} />
+        <ProgressBar durationMs={phaseDurationMs} paused={paused} accent={cat.accent} />
       </div>
     </div>
   );
 }
 
 // ── 2 · EDITORIAL SPLIT ──────────────────────────────────────────────────
-function CardEditorial({ item, cat, progress, fontScale }: CardProps) {
+function CardEditorial({ item, cat, fontScale, phaseDurationMs, paused }: CardProps) {
   return (
     <div style={{ ...cardBase(cat), display: 'grid', gridTemplateColumns: '320px 1fr' }}>
       <div
@@ -230,14 +242,14 @@ function CardEditorial({ item, cat, progress, fontScale }: CardProps) {
             }}
           />
         </div>
-        <ProgressBar progress={progress} accent={cat.accent} />
+        <ProgressBar durationMs={phaseDurationMs} paused={paused} accent={cat.accent} />
       </div>
     </div>
   );
 }
 
 // ── 3 · MAGAZINE QUOTE ───────────────────────────────────────────────────
-function CardMagazine({ item, cat, progress, fontScale }: CardProps) {
+function CardMagazine({ item, cat, fontScale, phaseDurationMs, paused }: CardProps) {
   return (
     <div
       style={{
@@ -299,7 +311,7 @@ function CardMagazine({ item, cat, progress, fontScale }: CardProps) {
           — {item.title}
         </span>
         <div style={{ flex: 1, maxWidth: 400 }}>
-          <ProgressBar progress={progress} accent={cat.accent} />
+          <ProgressBar durationMs={phaseDurationMs} paused={paused} accent={cat.accent} />
         </div>
         <RefCode code={item.refCode} color={cat.ink} />
       </div>
@@ -309,16 +321,25 @@ function CardMagazine({ item, cat, progress, fontScale }: CardProps) {
 
 // ── 4 · QUIZ SPOTLIGHT ───────────────────────────────────────────────────
 interface CountdownRingProps {
-  progress: number;
+  durationMs: number;
   accent: string;
   label: React.ReactNode;
+  paused?: boolean;
 }
 
-function CountdownRing({ progress, accent, label }: CountdownRingProps) {
+function CountdownRing({ durationMs, accent, label, paused }: CountdownRingProps) {
   const R = 140;
   const C = 2 * Math.PI * R;
+  // CSS var consume el circumference como punto de partida del dashoffset.
   return (
-    <div style={{ position: 'relative', width: 340, height: 340 }}>
+    <div
+      style={{
+        position: 'relative',
+        width: 340,
+        height: 340,
+        ['--edu-circumference' as string]: String(C),
+      } as React.CSSProperties}
+    >
       <svg width="340" height="340" viewBox="0 0 340 340">
         <circle cx="170" cy="170" r={R} fill="none" stroke="rgba(0,0,0,0.06)" strokeWidth="14" />
         <circle
@@ -330,9 +351,12 @@ function CountdownRing({ progress, accent, label }: CountdownRingProps) {
           strokeWidth="14"
           strokeLinecap="round"
           strokeDasharray={C}
-          strokeDashoffset={C * (1 - progress)}
           transform="rotate(-90 170 170)"
-          style={{ transition: 'stroke-dashoffset 0.2s linear' }}
+          style={{
+            strokeDashoffset: C,
+            animation: `edu-countdown-fill ${durationMs}ms linear forwards`,
+            animationPlayState: paused ? 'paused' : 'running',
+          }}
         />
       </svg>
       <div
@@ -354,7 +378,7 @@ function CountdownRing({ progress, accent, label }: CountdownRingProps) {
   );
 }
 
-function CardQuiz({ item, cat, progress, fontScale, quizState, quizProgress = 0, quizSeconds = 0 }: CardProps) {
+function CardQuiz({ item, cat, fontScale, phaseDurationMs, paused, quizState, quizSeconds = 0 }: CardProps) {
   const isAnswer = quizState === 'answer';
   return (
     <div style={{ ...cardBase(cat), display: 'grid', gridTemplateRows: 'auto 1fr auto', padding: '64px 96px' }}>
@@ -391,21 +415,22 @@ function CardQuiz({ item, cat, progress, fontScale, quizState, quizProgress = 0,
           />
         </div>
         <CountdownRing
-          progress={quizProgress}
+          durationMs={phaseDurationMs}
+          paused={paused}
           accent={cat.accent}
           label={isAnswer ? '✓' : Math.max(0, Math.ceil(quizSeconds))}
         />
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', alignItems: 'center', gap: 32 }}>
         <RefCode code={item.refCode} color={cat.ink} />
-        <ProgressBar progress={progress} accent={cat.accent} />
+        <ProgressBar durationMs={phaseDurationMs} paused={paused} accent={cat.accent} />
       </div>
     </div>
   );
 }
 
 // ── 5 · MOSAIC ───────────────────────────────────────────────────────────
-function CardMosaic({ item, cat, progress, fontScale }: CardProps) {
+function CardMosaic({ item, cat, fontScale, phaseDurationMs, paused }: CardProps) {
   return (
     <div
       style={{
@@ -485,7 +510,7 @@ function CardMosaic({ item, cat, progress, fontScale }: CardProps) {
       >
         <Icon name="clock" size={20} style={{ color: cat.ink, opacity: 0.5 }} />
         <div style={{ flex: 1 }}>
-          <ProgressBar progress={progress} accent={cat.accent} />
+          <ProgressBar durationMs={phaseDurationMs} paused={paused} accent={cat.accent} />
         </div>
         <span style={{ fontSize: '1.3rem', color: cat.ink, opacity: 0.5, fontFamily: 'JetBrains Mono, monospace' }}>
           rotando
@@ -496,7 +521,7 @@ function CardMosaic({ item, cat, progress, fontScale }: CardProps) {
 }
 
 // ── 6 · AURORA ───────────────────────────────────────────────────────────
-function CardAurora({ item, cat, progress, fontScale }: CardProps) {
+function CardAurora({ item, cat, fontScale, phaseDurationMs, paused }: CardProps) {
   return (
     <div
       style={{
@@ -560,7 +585,7 @@ function CardAurora({ item, cat, progress, fontScale }: CardProps) {
       </div>
       <div style={{ position: 'relative', display: 'grid', gridTemplateColumns: '1fr 1fr', alignItems: 'center', gap: 32 }}>
         <RefCode code={item.refCode} color={cat.ink} />
-        <ProgressBar progress={progress} accent={cat.accent} />
+        <ProgressBar durationMs={phaseDurationMs} paused={paused} accent={cat.accent} />
       </div>
     </div>
   );

@@ -35,6 +35,24 @@ body {
   }
 }
 
+@keyframes edu-progress-fill {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+@keyframes edu-countdown-fill {
+  from {
+    stroke-dashoffset: var(--edu-circumference, 880);
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
 @keyframes edu-breathe-stage {
   0%, 100% {
     transform: scale(1);
