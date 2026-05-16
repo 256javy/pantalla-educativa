@@ -27,7 +27,7 @@ body {
 @keyframes edu-fade-in {
   from {
     opacity: 0;
-    transform: scale(0.995);
+    transform: scale(0.998);
   }
   to {
     opacity: 1;

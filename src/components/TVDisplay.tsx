@@ -217,7 +217,7 @@ function TVStage({ children, slotKey, palette }: TVStageProps) {
         style={{
           position: 'absolute',
           inset: 0,
-          animation: 'edu-fade-in 1.6s ease-out both',
+          animation: 'edu-fade-in 2.4s cubic-bezier(0.22, 0.61, 0.36, 1) both',
         }}
       >
         {children}
