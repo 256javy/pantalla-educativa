@@ -28,7 +28,6 @@ interface DisplayEngineResult {
   current: Card;
   phase: 'idle' | 'question' | 'answer';
   progress: number;
-  transitioning: boolean;
   next: () => void;
   prev: () => void;
 }
@@ -44,7 +43,6 @@ export function useDisplayEngine({
   const [phase, setPhase] = useState<'idle' | 'question' | 'answer'>('idle');
   const [tick, setTick] = useState(0);
   const [phaseStart, setPhaseStart] = useState(() => performance.now());
-  const [transitioning, setTransitioning] = useState(false);
 
   const current = items[index % items.length];
   const isQuiz = current?.type === 'QUIZ';
@@ -60,9 +58,6 @@ export function useDisplayEngine({
     setPhase(isQuiz ? 'question' : 'idle');
     setPhaseStart(performance.now());
     setTick(0);
-    setTransitioning(true);
-    const t = setTimeout(() => setTransitioning(false), 900);
-    return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [index, items]);
 
@@ -102,7 +97,7 @@ export function useDisplayEngine({
   }, [items.length]);
   const prev = useCallback(() => setIndex((i) => (i - 1 + items.length) % items.length), [items.length]);
 
-  return { index, current, phase, progress, transitioning, next, prev };
+  return { index, current, phase, progress, next, prev };
 }
 
 // ── useQuizSession ────────────────────────────────────────────────────────
@@ -196,11 +191,11 @@ export function useQuizSession(): QuizSessionResult {
 // ── TVStage ────────────────────────────────────────────────────────────────
 interface TVStageProps {
   children: React.ReactNode;
-  transitioning: boolean;
+  slotKey: string | number;
   palette: string;
 }
 
-function TVStage({ children, transitioning, palette }: TVStageProps) {
+function TVStage({ children, slotKey, palette }: TVStageProps) {
   const filter =
     palette === 'sepia'
       ? 'sepia(0.15) saturate(0.95)'
@@ -218,7 +213,7 @@ function TVStage({ children, transitioning, palette }: TVStageProps) {
       }}
     >
       <div
-        key={transitioning ? 'in' : 'out'}
+        key={slotKey}
         style={{
           position: 'absolute',
           inset: 0,
@@ -770,7 +765,7 @@ export default function TVDisplay({
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
     >
-      <TVStage transitioning={eng.transitioning} palette={tweaks.palette}>
+      <TVStage slotKey={eng.index} palette={tweaks.palette}>
         <CardRenderer
           variant={variant}
           item={eng.current}
