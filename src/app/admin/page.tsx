@@ -6,10 +6,11 @@ import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { isAdminEmail } from '@/lib/admin-whitelist';
 import { useCards } from '@/lib/use-cards';
-import { SEED } from '@/lib/seed-data';
+import catalog from '@/lib/catalogo-visual-v1.json';
 import AdminPanel from '@/components/AdminPanel';
 import type { Card } from '@/lib/types';
 
+const SEED = catalog as Omit<Card, 'id'>[];
 const SEED_WITH_IDS: Card[] = SEED.map((card, i) => ({
   ...card,
   id: `c-${i + 1}`,

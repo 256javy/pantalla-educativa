@@ -2,7 +2,7 @@
 // ── /display — Vista pública TV (carrusel) ───────────────────────────────
 import { useMemo, useState } from 'react';
 import { useCards } from '@/lib/use-cards';
-import { SEED } from '@/lib/seed-data';
+import catalog from '@/lib/catalogo-visual-v1.json';
 import { useWakeLock } from '@/lib/use-wake-lock';
 import { shuffleByFrequency } from '@/lib/playlist';
 import TVDisplay, { type TVTweaks } from '@/components/TVDisplay';
@@ -16,6 +16,7 @@ const TWEAKS: TVTweaks = {
   palette: 'cream',
 };
 
+const SEED = catalog as Omit<Card, 'id'>[];
 const SEED_WITH_IDS: Card[] = SEED.map((card, i) => ({ ...card, id: `c-${i + 1}` }));
 
 export default function DisplayPage() {
