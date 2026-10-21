@@ -20,4 +20,15 @@ Añadir un recurso visual opcional al modelo de tarjeta: archivo, texto alternat
 
 Para quizzes, separar pregunta, opciones, opción correcta y explicación. Las imágenes del piloto son material de reconocimiento; el efecto invernadero, las escalas y los ciclos requieren diagramas propios con etiquetas en español.
 
-Este piloto no agrega todavía campos al administrador, almacenamiento remoto, búsqueda de imágenes ni nuevos formatos al reproductor.
+La selección inicial se conserva en esta carpeta; el estado de su integración se detalla a continuación.
+
+## Integración disponible en esta rama
+
+- El administrador permite elegir un `imageId` de la biblioteca en tarjetas que no sean QUIZ. El reproductor muestra imagen, pie, créditos y enlaces de licencia junto al texto; si la imagen falla conserva el texto y muestra un aviso.
+- Los quizzes aceptan `quiz: { options, correctIndex, seconds }`: de 2 a 4 opciones, índice desde cero y de 10 a 60 segundos. La explicación se guarda en `answer`; la revelación dura 12 segundos. Sin este objeto siguen funcionando como quiz de texto con 15 segundos de pregunta y 6 de respuesta.
+- La importación JSON valida y conserva ambos campos opcionales. `null` permite retirarlos. Las tarjetas existentes no necesitan migración. No se reinterpretan automáticamente las opciones que ya estaban escritas dentro del párrafo.
+- `/pilot` demuestra fotografía, ciencia, quiz estructurado y quiz clásico sin leer ni escribir Firestore. La selección de imágenes en esta página solo cambia la demostración.
+- Los archivos publicados se sirven desde `public/educational`; los metadatos y textos alternativos están en `src/lib/visual-library.json`. Las etiquetas científicas indican color asignado o composición cuando corresponde.
+- Siguen pendientes subida de archivos propios, búsqueda externa, diagramas, revisión de las 2.000 tarjetas y aceptación con una sesión real del administrador tras desplegar.
+
+Validación de la integración: `pnpm exec tsx scripts/test-visual-cards.ts`, `pnpm exec tsc --noEmit`, `pnpm build` y revisión en navegador de `/pilot` (imagen, opciones, revelación y compatibilidad del quiz clásico). Esta validación no acredita escrituras autenticadas en Firestore ni un despliegue.

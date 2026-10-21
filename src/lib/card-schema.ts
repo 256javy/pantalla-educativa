@@ -1,4 +1,5 @@
 import type { Card, CardType, Frequency } from './types';
+import visuals from './visual-library.json';
 
 // ── JSON Schema (Draft 7) ────────────────────────────────────────────────
 // Pensado para pegarlo al prompt de un modelo: incluye descripciones,
@@ -49,6 +50,20 @@ export const CARD_JSON_SCHEMA = {
         type: 'string',
         enum: ['LOW', 'MEDIUM', 'HIGH'],
         description: 'Cuán seguido debe aparecer (usado por el motor de rotación).',
+      },
+      imageId: {
+        type: ['string', 'null'], enum: [null, ...visuals.map((v) => v.id)],
+        description: 'Imagen de la biblioteca educativa. Solo se muestra en tarjetas que no sean QUIZ.',
+      },
+      quiz: {
+        type: ['object', 'null'], additionalProperties: false,
+        required: ['options', 'correctIndex', 'seconds'],
+        properties: {
+          options: { type: 'array', minItems: 2, maxItems: 4, items: { type: 'string', minLength: 1, maxLength: 100 } },
+          correctIndex: { type: 'integer', minimum: 0, maximum: 3, description: 'Índice desde cero; debe existir en options.' },
+          seconds: { type: 'integer', minimum: 10, maximum: 60 },
+        },
+        description: 'Solo QUIZ. Contenido contiene la pregunta sin opciones y answer la explicación. Omitir para quiz de texto clásico.',
       },
       refCode: {
         type: 'string',
@@ -185,7 +200,19 @@ export function validateCardInput(input: unknown): ValidationResult {
   }
 
   // propiedades extra
-  const allowed = new Set(['type', 'title', 'content', 'answer', 'refCode', 'active', 'frequency']);
+  if (raw.imageId !== undefined && raw.imageId !== null && !visuals.some((v) => v.id === raw.imageId)) errors.push('`imageId` no existe en la biblioteca');
+  if (raw.quiz !== undefined && raw.quiz !== null) {
+    const q = raw.quiz as Record<string, unknown>;
+    if (type !== 'QUIZ') errors.push('`quiz` solo se admite en QUIZ');
+    if (typeof q !== 'object' || Array.isArray(q)) errors.push('`quiz` debe ser objeto');
+    else {
+      if (!Array.isArray(q.options) || q.options.length < 2 || q.options.length > 4 || q.options.some((o) => typeof o !== 'string' || !o.trim() || o.length > 100)) errors.push('`quiz.options` requiere 2 a 4 opciones no vacías de hasta 100 caracteres');
+      if (!Number.isInteger(q.correctIndex) || (q.correctIndex as number) < 0 || !Array.isArray(q.options) || (q.correctIndex as number) >= q.options.length) errors.push('`quiz.correctIndex` debe apuntar a una opción existente');
+      if (!Number.isInteger(q.seconds) || (q.seconds as number) < 10 || (q.seconds as number) > 60) errors.push('`quiz.seconds` debe estar entre 10 y 60');
+      if (Object.keys(q).some((k) => !['options', 'correctIndex', 'seconds'].includes(k))) errors.push('`quiz` contiene propiedades no permitidas');
+    }
+  }
+  const allowed = new Set(['type', 'title', 'content', 'answer', 'refCode', 'active', 'frequency', 'imageId', 'quiz']);
   const extras = Object.keys(raw).filter((k) => !allowed.has(k));
   if (extras.length > 0) {
     errors.push(`propiedades no permitidas: ${extras.join(', ')}`);
@@ -196,6 +223,8 @@ export function validateCardInput(input: unknown): ValidationResult {
   return {
     ok: true,
     card: {
+      ...(raw.imageId !== undefined ? { imageId: raw.imageId as Card['imageId'] } : {}),
+      ...(raw.quiz !== undefined ? { quiz: raw.quiz as Card['quiz'] } : {}),
       type: raw.type as CardType,
       title: (raw.title as string).trim(),
       content: (raw.content as string).trim(),

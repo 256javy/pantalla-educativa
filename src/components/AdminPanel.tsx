@@ -5,6 +5,7 @@ import { CATEGORIES, FREQ_LABEL, FREQ_BARS } from '@/lib/categories';
 import type { Card, CardType, Frequency } from '@/lib/types';
 import { createCard, updateCard, deleteCard, toggleActive } from '@/lib/cards-repo';
 import Icon from './Icon';
+import visuals from '@/lib/visual-library.json';
 import CardRenderer, { defaultVariantFor } from './CardRenderer';
 
 // ── helpers ────────────────────────────────────────────────────────────────
@@ -511,6 +512,7 @@ function Pagination({ page, totalPages, onChange }: PaginationProps) {
 
 // ── LivePreview ──────────────────────────────────────────────────────────
 function LivePreview({ item, cat }: { item: Card; cat: import('@/lib/types').Category }) {
+  const [reveal, setReveal] = useState(false);
   const targetW = 472;
   const targetH = targetW * 9 / 16;
   const scale = targetW / 1920;
@@ -543,7 +545,7 @@ function LivePreview({ item, cat }: { item: Card; cat: import('@/lib/types').Cat
           progress={0.42}
           phaseDurationMs={22000}
           paused
-          quizState={item.type === 'QUIZ' ? 'question' : null}
+          quizState={item.type === 'QUIZ' ? (reveal ? 'answer' : 'question') : null}
           quizProgress={0.5}
           quizSeconds={8}
           fontScale={1}
@@ -556,7 +558,7 @@ function LivePreview({ item, cat }: { item: Card; cat: import('@/lib/types').Cat
           letterSpacing: '0.1em', textTransform: 'uppercase',
         }}
       >
-        Preview · auto
+        {item.type === 'QUIZ' ? <button onClick={() => setReveal((v) => !v)} style={{ cursor: 'pointer', padding: 8, background: '#fff', color: '#172033', borderRadius: 6 }}>{reveal ? 'Ver pregunta' : 'Ver respuesta'}</button> : 'Preview · auto'}
       </div>
     </div>
   );
@@ -683,7 +685,7 @@ function AdminEditor({ item, onChange, isCreating, onSave, onCancel }: AdminEdit
               return (
                 <button
                   key={c.key}
-                  onClick={() => onChange({ type: c.key })}
+                  onClick={() => onChange({ type: c.key, ...(c.key !== 'QUIZ' ? { quiz: null } : {}) })}
                   style={{
                     padding: '8px 4px', borderRadius: 9,
                     border: '1px solid ' + (sel ? c.accent : '#E2E8F0'),
@@ -735,11 +737,32 @@ function AdminEditor({ item, onChange, isCreating, onSave, onCancel }: AdminEdit
               value={item.answer}
               onChange={(e) => onChange({ answer: e.target.value })}
               rows={2}
-              placeholder="Se revela tras los 15 s."
+              placeholder="Explica brevemente por qué es correcta."
               style={{ ...fieldStyle, resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.5 }}
             />
           </Section>
         )}
+
+        {item.type === 'QUIZ' && <Section title="Opciones del quiz">
+          <label style={{ display: 'flex', gap: 8 }}><input type="checkbox" checked={!!item.quiz} onChange={(e) => onChange({ quiz: e.target.checked ? { options: ['Opción A', 'Opción B', 'Opción C'], correctIndex: 0, seconds: 15 } : null })} />Usar opciones separadas</label>
+          {item.quiz && <div style={{ display: 'grid', gap: 10, marginTop: 12 }}>
+            {item.quiz.options.map((option, i) => <label key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <input type="radio" name={`correct-${item.id}`} aria-label={`Opción ${String.fromCharCode(65 + i)} correcta`} checked={item.quiz?.correctIndex === i} onChange={() => onChange({ quiz: { ...item.quiz!, correctIndex: i } })} />
+              <input aria-label={`Opción ${String.fromCharCode(65 + i)}`} maxLength={100} value={option} style={fieldStyle} onChange={(e) => onChange({ quiz: { ...item.quiz!, options: item.quiz!.options.map((o, n) => n === i ? e.target.value : o) } })} />
+            </label>)}
+            <label>Cantidad de opciones <select value={item.quiz.options.length} onChange={(e) => { const count = Number(e.target.value); onChange({ quiz: { ...item.quiz!, options: Array.from({ length: count }, (_, i) => item.quiz!.options[i] ?? `Opción ${String.fromCharCode(65 + i)}`), correctIndex: Math.min(item.quiz!.correctIndex, count - 1) } }); }}>{[2, 3, 4].map((n) => <option key={n}>{n}</option>)}</select></label>
+            <label>Segundos para pensar <select value={item.quiz.seconds} onChange={(e) => onChange({ quiz: { ...item.quiz!, seconds: Number(e.target.value) } })}>{[10,15,20,30,45,60].map((n) => <option key={n}>{n}</option>)}</select></label>
+            <small>Marca la respuesta correcta. Escribe solo la pregunta en Contenido y la explicación en Respuesta. Las opciones vacías usan la presentación de texto hasta completarlas.</small>
+          </div>}
+        </Section>}
+
+        {item.type !== 'QUIZ' && <Section title="Imagen educativa">
+          <select aria-label="Imagen educativa" style={fieldStyle} value={item.imageId || ''} onChange={(e) => onChange({ imageId: e.target.value || null })}>
+            <option value="">Sin imagen</option>
+            {visuals.map((v) => <option key={v.id} value={v.id}>{v.label}</option>)}
+          </select>
+          <p style={{ fontSize: 12, color: '#64748b' }}>La imagen conserva su proporción. El pie y los créditos se incluyen automáticamente.</p>
+        </Section>}
 
         <Section title="Frecuencia de aparición">
           <div style={{ display: 'flex', gap: 6 }}>
@@ -907,6 +930,8 @@ export default function AdminPanel({
         refCode: draft.refCode,
         active: draft.active,
         frequency: draft.frequency,
+        ...(draft.imageId !== undefined ? { imageId: draft.imageId } : {}),
+        ...(draft.quiz !== undefined ? { quiz: draft.quiz } : {}),
       });
       const newItem: Card = { ...draft, id: newId };
       setItems((arr) => [newItem, ...arr]);

@@ -4,6 +4,7 @@ import React from 'react';
 import { splitHighlighted, CATEGORIES } from '@/lib/categories';
 import type { Card, Category } from '@/lib/types';
 import Icon from './Icon';
+import visuals from '@/lib/visual-library.json';
 
 // ── Helpers compartidos ──────────────────────────────────────────────────
 
@@ -96,7 +97,10 @@ function ProgressBar({ durationMs, accent, paused }: ProgressBarProps) {
           background: accent,
           borderRadius: 999,
           opacity: 0.65,
-          animation: `edu-progress-fill ${durationMs}ms linear forwards`,
+          animationName: 'edu-progress-fill',
+          animationDuration: `${durationMs}ms`,
+          animationTimingFunction: 'linear',
+          animationFillMode: 'forwards',
           animationPlayState: paused ? 'paused' : 'running',
         }}
       />
@@ -354,7 +358,10 @@ function CountdownRing({ durationMs, accent, label, paused }: CountdownRingProps
           transform="rotate(-90 170 170)"
           style={{
             strokeDashoffset: C,
-            animation: `edu-countdown-fill ${durationMs}ms linear forwards`,
+            animationName: 'edu-countdown-fill',
+          animationDuration: `${durationMs}ms`,
+          animationTimingFunction: 'linear',
+          animationFillMode: 'forwards',
             animationPlayState: paused ? 'paused' : 'running',
           }}
         />
@@ -378,55 +385,57 @@ function CountdownRing({ durationMs, accent, label, paused }: CountdownRingProps
   );
 }
 
+function Visual({ imageId }: { imageId?: string | null }) {
+  const visual = visuals.find((v) => v.id === imageId);
+  const [failed, setFailed] = React.useState(false);
+  React.useEffect(() => setFailed(false), [imageId]);
+  if (!visual) return null;
+  return <figure style={{ margin: 0, display: 'flex', flexDirection: 'column', gap: 16, minWidth: 0 }}>
+    {failed ? <div role="status" style={{ padding: 40, fontSize: 32 }}>Imagen no disponible: {visual.alt}</div> :
+      /* Local curated files retain their source metadata and are served without external requests. */
+      <img src={visual.src} alt={visual.alt} onError={() => setFailed(true)} style={{ width: '100%', height: 520, objectFit: 'contain', borderRadius: 20 }} />}
+    <figcaption style={{ fontSize: 22, lineHeight: 1.4 }}>
+      <div>{visual.caption}</div>
+      <div style={{ fontSize: 18, marginTop: 8 }}>
+        {visual.credit || visual.author} · <a href={visual.source} target="_blank" rel="noreferrer">Fuente</a> · <a href={visual.licenseUrl || visual.source} target="_blank" rel="noreferrer">{visual.license}</a> · {visual.changes}
+      </div>
+    </figcaption>
+  </figure>;
+}
+
+function CardVisual({ item, cat, fontScale, phaseDurationMs, paused }: CardProps) {
+  return <div style={{ ...cardBase(cat), padding: '64px 80px', display: 'grid', gridTemplateRows: 'auto 1fr auto', gap: 32 }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between' }}><CategoryBadge cat={cat} /><span style={{ fontSize: 28 }}>{item.title}</span></div>
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', alignItems: 'center', gap: 64, minHeight: 0 }}>
+      <Visual imageId={item.imageId} />
+      <HighlightedText text={item.content} accent={cat.accent} style={{ fontSize: `${3.5 * fontScale}rem`, lineHeight: 1.2, color: cat.ink, fontWeight: 600 }} />
+    </div>
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32 }}><RefCode code={item.refCode} color={cat.ink} /><ProgressBar durationMs={phaseDurationMs} paused={paused} accent={cat.accent} /></div>
+  </div>;
+}
+
 function CardQuiz({ item, cat, fontScale, phaseDurationMs, paused, quizState, quizSeconds = 0 }: CardProps) {
   const isAnswer = quizState === 'answer';
-  return (
-    <div style={{ ...cardBase(cat), display: 'grid', gridTemplateRows: 'auto 1fr auto', padding: '64px 96px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <CategoryBadge cat={cat} />
-        <span style={{ color: cat.ink, opacity: 0.5, fontSize: '1.4rem', fontWeight: 500 }}>
-          {item.title}
-        </span>
+  const quiz = item.quiz;
+  const structured = quiz && quiz.options.length >= 2 && quiz.options.length <= 4 && quiz.options.every((o) => o.trim()) && Number.isInteger(quiz.correctIndex) && quiz.correctIndex >= 0 && quiz.correctIndex < quiz.options.length;
+  const dense = item.content.length + item.answer.length + (quiz?.options.join('').length || 0) > 450;
+  return <div style={{ ...cardBase(cat), display: 'grid', gridTemplateRows: 'auto 1fr auto', padding: '56px 80px', gap: 24 }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}><CategoryBadge cat={cat} /><span style={{ fontSize: 28 }}>{item.title}</span></div>
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', alignItems: 'center', gap: 60 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
+        <div style={{ fontSize: 24, color: cat.accent, fontWeight: 700 }}>{isAnswer ? 'Respuesta y explicación' : 'Piensa tu respuesta'}</div>
+        <HighlightedText text={structured || !isAnswer ? item.content : item.answer} accent={cat.accent} style={{ fontSize: `${(structured ? (dense ? 2.5 : 3.4) : 4.2) * fontScale}rem`, lineHeight: 1.15, color: cat.ink, fontWeight: 600 }} />
+        {structured && <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+          {quiz.options.map((option, i) => <div key={i} style={{ padding: '24px 28px', borderRadius: 18, fontSize: `${(dense ? 1.75 : 2.3) * fontScale}rem`, border: `3px solid ${isAnswer && i === quiz.correctIndex ? '#15803d' : cat.accentSoft}`, background: isAnswer && i === quiz.correctIndex ? '#dcfce7' : '#ffffff99', color: cat.ink }}>
+            <strong>{String.fromCharCode(65 + i)}.</strong> {option}{isAnswer && i === quiz.correctIndex && <strong> · Correcta</strong>}
+          </div>)}
+        </div>}
+        {structured && isAnswer && <p style={{ fontSize: `${(dense ? 1.6 : 2.2) * fontScale}rem`, lineHeight: 1.3, margin: 0, color: cat.ink }}>{item.answer}</p>}
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', alignItems: 'center', gap: 80, padding: '0 2%' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
-          <div
-            style={{
-              fontSize: '1.4rem',
-              textTransform: 'uppercase',
-              letterSpacing: '0.18em',
-              color: cat.accent,
-              fontWeight: 600,
-            }}
-          >
-            {isAnswer ? 'Respuesta' : 'Pregunta'}
-          </div>
-          <HighlightedText
-            text={isAnswer ? item.answer : item.content}
-            accent={cat.accent}
-            style={{
-              fontSize: `${isAnswer ? 3.6 : 4.6 * fontScale}rem`,
-              lineHeight: 1.15,
-              color: cat.ink,
-              fontWeight: isAnswer ? 500 : 600,
-              letterSpacing: '-0.01em',
-              transition: 'opacity 0.6s',
-            }}
-          />
-        </div>
-        <CountdownRing
-          durationMs={phaseDurationMs}
-          paused={paused}
-          accent={cat.accent}
-          label={isAnswer ? '✓' : Math.max(0, Math.ceil(quizSeconds))}
-        />
-      </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', alignItems: 'center', gap: 32 }}>
-        <RefCode code={item.refCode} color={cat.ink} />
-        <ProgressBar durationMs={phaseDurationMs} paused={paused} accent={cat.accent} />
-      </div>
+      <CountdownRing durationMs={phaseDurationMs} paused={paused} accent={cat.accent} label={isAnswer ? '✓' : Math.max(0, Math.ceil(quizSeconds))} />
     </div>
-  );
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32 }}><RefCode code={item.refCode} color={cat.ink} /><ProgressBar durationMs={phaseDurationMs} paused={paused} accent={cat.accent} /></div>
+  </div>;
 }
 
 // ── 5 · MOSAIC ───────────────────────────────────────────────────────────
@@ -626,6 +635,8 @@ interface CardRendererProps extends CardProps {
 }
 
 export default function CardRenderer({ variant, ...props }: CardRendererProps) {
+  if (props.item.type === 'QUIZ') return <CardQuiz {...props} />;
+  if (visuals.some((v) => v.id === props.item.imageId)) return <CardVisual {...props} />;
   const def = CARD_VARIANTS.find((v) => v.id === variant) || CARD_VARIANTS[0];
   const C = def.Component;
   return <C {...props} />;

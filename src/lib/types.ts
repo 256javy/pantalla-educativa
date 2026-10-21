@@ -7,6 +7,8 @@ export interface Card {
   title: string;
   content: string; // soporta marcadores **palabra**
   answer: string;
+  imageId?: string | null;
+  quiz?: { options: string[]; correctIndex: number; seconds: number } | null;
   refCode: string; // ej 'A20'
   active: boolean;
   frequency: Frequency;

@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { CATEGORIES } from '@/lib/categories';
 import type { Card } from '@/lib/types';
 import Icon from './Icon';
+import { quizDuration, quizAnswerDuration } from '@/lib/quiz-timing';
 import CardRenderer, { defaultVariantFor } from './CardRenderer';
 
 // ── Tweaks shape ─────────────────────────────────────────────────────────
@@ -49,8 +50,8 @@ export function useDisplayEngine({
   const current = items[index % items.length];
   const isQuiz = current?.type === 'QUIZ';
 
-  const QUIZ_Q = 15 * 1000;
-  const QUIZ_A = 6 * 1000;
+  const QUIZ_Q = quizDuration(current) * 1000;
+  const QUIZ_A = quizAnswerDuration(current) * 1000;
   const NORMAL = rotationSeconds * 1000;
   const phaseDur = isQuiz ? (phase === 'answer' ? QUIZ_A : QUIZ_Q) : NORMAL;
 
@@ -507,7 +508,7 @@ export function QuizTimeLauncher({ onStart, onClose }: QuizTimeLauncherProps) {
         </div>
         <p style={{ color: '#64748B', fontSize: 15, lineHeight: 1.55, margin: '8px 0 28px' }}>
           Durante el tiempo elegido, la pantalla solo mostrará preguntas. Cada una se queda
-          15 segundos antes de revelar la respuesta. Puedes terminar antes en cualquier momento.
+          El tiempo de cada pregunta se configura en su tarjeta. Puedes terminar antes en cualquier momento.
         </p>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 10, marginBottom: 24 }}>
@@ -770,7 +771,7 @@ export default function TVDisplay({
 
   const [hover, setHover] = useState(false);
   const [launcherOpen, setLauncherOpen] = useState(false);
-  const quizSeconds = 15 - eng.progress * 15;
+  const quizSeconds = quizDuration(eng.current) * (1 - eng.progress);
 
   const inSession = !!quiz.session;
 
