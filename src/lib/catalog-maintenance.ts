@@ -18,8 +18,18 @@ export async function readCatalog(): Promise<CatalogBackup> {
   return { format: 'pantalla-educativa-backup-v1', projectId: app.options.projectId || '', capturedAt: new Date().toISOString(), count: documents.length, documents };
 }
 
+export function canonicalSnapshot(value: unknown): string {
+  const normalize = (v: unknown): unknown => {
+    if (Array.isArray(v)) return v.map(normalize);
+    if (v && typeof v === 'object') return Object.fromEntries(Object.entries(v).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0).map(([k, x]) => [k, normalize(x)]));
+    return v;
+  };
+  // Resolve Firestore Timestamp.toJSON before ordering object keys.
+  return JSON.stringify(normalize(JSON.parse(JSON.stringify(value))));
+}
+
 export async function fingerprint(backup: CatalogBackup): Promise<string> {
-  const bytes = new TextEncoder().encode(JSON.stringify({ projectId: backup.projectId, documents: backup.documents }));
+  const bytes = new TextEncoder().encode(canonicalSnapshot({ projectId: backup.projectId, documents: backup.documents }));
   const digest = await crypto.subtle.digest('SHA-256', bytes);
   return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, '0')).join('');
 }

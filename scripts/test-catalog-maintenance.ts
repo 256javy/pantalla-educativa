@@ -8,12 +8,13 @@ async function main() {
   const { db, app } = await import('../src/lib/firebase');
   assert.equal(app.options.projectId, 'demo-pantalla-catalog');
   connectFirestoreEmulator(db, '127.0.0.1', 8188);
-  const { readCatalog, fingerprint, replaceCatalog, restoreCatalog, visibleDocuments } = await import('../src/lib/catalog-maintenance');
+  const { readCatalog, fingerprint, replaceCatalog, restoreCatalog, visibleDocuments, canonicalSnapshot } = await import('../src/lib/catalog-maintenance');
   for (let start = 0; start < 805; start += 400) {
     const batch = writeBatch(db);
     for (let i = start; i < Math.min(start + 400, 805); i++) batch.set(doc(db, 'cards', `d${String(i).padStart(3, '0')}`), { title: `Original ${i}`, active: i % 2 === 0, refCode: `A${i}`, custom: { preserve: i }, denyArchive: false });
     await batch.commit();
   }
+  assert.equal(canonicalSnapshot({ a: 1, b: { c: 2, d: 3 } }), canonicalSnapshot({ b: { d: 3, c: 2 }, a: 1 }));
   const before = await readCatalog();
   assert.equal(before.count, 805);
   const hash = await fingerprint(before);

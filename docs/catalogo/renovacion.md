@@ -6,7 +6,7 @@
 
 1. Entrar con una sesión autorizada en `/admin/catalog`.
 2. Preparar el respaldo desde el servidor: incluye todos los documentos de `cards`, sus IDs, campos, marcas de tiempo, proyecto y fecha. No depende de paginación de la tabla.
-3. Descargar el JSON y verificar el número de documentos y el hash del contenido (SHA-256 de `JSON.stringify({ projectId, documents })`). Conservar el archivo fuera del repositorio.
+3. Descargar el JSON y verificar el número de documentos y el hash del contenido (SHA-256 de `{ projectId, documents }` serializado con claves ordenadas recursivamente; las marcas de tiempo usan su representación JSON). Conservar el archivo fuera del repositorio.
 4. Marcar el respaldo como verificado e iniciar la sustitución. Una segunda lectura bloquea el proceso si el catálogo cambió desde el respaldo.
 5. Las 30 nuevas se preparan ocultas; las anteriores se archivan en lotes de 400 sin modificar sus campos educativos; se conserva su estado previo en `catalogOriginalActive` y se desactivan para que las pantallas con versiones anteriores también dejen de mostrarlas; después se publican las 30 nuevas en un único lote.
 6. Comprobar que solo las 30 nuevas son visibles y que los originales siguen archivados. El lector público, el administrador y el exportador excluyen `catalogArchive`.
