@@ -38,7 +38,7 @@ export function useCards(opts?: UseCardsOptions): {
       const unsubscribe = onSnapshot(
         q,
         (snapshot) => {
-          const data = snapshot.docs.map((doc) => ({
+          const data = snapshot.docs.filter((doc) => !doc.data().catalogArchive).map((doc) => ({
             id: doc.id,
             ...doc.data(),
           })) as Card[];
