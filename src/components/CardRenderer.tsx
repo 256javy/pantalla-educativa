@@ -396,8 +396,8 @@ function Visual({ imageId }: { imageId?: string | null }) {
       <img src={visual.src} alt={visual.alt} onError={() => setFailed(true)} style={{ width: '100%', height: 520, objectFit: 'contain', borderRadius: 20 }} />}
     <figcaption style={{ fontSize: 22, lineHeight: 1.4 }}>
       <div>{visual.caption}</div>
-      <div style={{ fontSize: 18, marginTop: 8 }}>
-        {visual.credit || visual.author} · <a href={visual.source} target="_blank" rel="noreferrer">Fuente</a> · <a href={visual.licenseUrl || visual.source} target="_blank" rel="noreferrer">{visual.license}</a> · {visual.changes}
+      <div style={{ fontSize: 18, marginTop: 8, overflowWrap: 'anywhere' }}>
+        {visual.author}{visual.credit && visual.credit !== visual.author && !/^own work$/i.test(visual.credit) ? ` · ${visual.credit}` : ''} · <a href={visual.source} target="_blank" rel="noreferrer">Fuente</a> · <a href={visual.licenseUrl || visual.source} target="_blank" rel="noreferrer">{visual.license}</a> · {visual.changes}
       </div>
     </figcaption>
   </figure>;
@@ -634,9 +634,22 @@ interface CardRendererProps extends CardProps {
   variant?: string;
 }
 
+function FittedCard({ children, background }: { children: React.ReactNode; background: string }) {
+  const host = React.useRef<HTMLDivElement>(null);
+  const [scale, setScale] = React.useState<number | null>(null);
+  React.useEffect(() => {
+    const observer = new ResizeObserver(([entry]) => setScale(Math.min(entry.contentRect.width / 1920, entry.contentRect.height / 1080)));
+    if (host.current) observer.observe(host.current);
+    return () => observer.disconnect();
+  }, []);
+  return <div ref={host} style={{ position: 'absolute', inset: 0, overflow: 'hidden', background }}>
+    <div style={{ position: 'absolute', width: 1920, height: 1080, left: '50%', top: '50%', transform: `translate(-50%, -50%) scale(${scale ?? 1})`, visibility: scale === null ? 'hidden' : 'visible' }}>{children}</div>
+  </div>;
+}
+
 export default function CardRenderer({ variant, ...props }: CardRendererProps) {
-  if (props.item.type === 'QUIZ') return <CardQuiz {...props} />;
-  if (visuals.some((v) => v.id === props.item.imageId)) return <CardVisual {...props} />;
+  if (props.item.type === 'QUIZ') return <FittedCard background={props.cat.bg}><CardQuiz {...props} /></FittedCard>;
+  if (visuals.some((v) => v.id === props.item.imageId)) return <FittedCard background={props.cat.bg}><CardVisual {...props} /></FittedCard>;
   const def = CARD_VARIANTS.find((v) => v.id === variant) || CARD_VARIANTS[0];
   const C = def.Component;
   return <C {...props} />;
