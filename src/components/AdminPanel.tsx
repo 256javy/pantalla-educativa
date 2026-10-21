@@ -69,6 +69,7 @@ function AdminTopBar({ user, onLogout, onOpenTV, onOpenImport }: AdminTopBarProp
         >
           <Icon name="tv" size={16} /> Ver pantalla
         </button>
+        <a href="/admin/catalog" style={{ padding: '8px 14px', color: '#0f172a', fontSize: 13 }}>Renovar catálogo</a>
         <div style={{ width: 1, height: 24, background: '#E2E8F0', margin: '0 6px' }} />
         <div style={{ fontSize: 13, color: '#475569' }}>{user.email}</div>
         <button

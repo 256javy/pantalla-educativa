@@ -1,0 +1,422 @@
+[
+  {
+    "type": "HISTORY",
+    "title": "Cristo Redentor",
+    "content": "El **Cristo Redentor** es una estatua con los brazos abiertos. Está en Río de Janeiro, Brasil.",
+    "answer": "",
+    "active": true,
+    "frequency": "MEDIUM",
+    "refCode": "H01",
+    "imageId": "pilot-01"
+  },
+  {
+    "type": "FACT",
+    "title": "Júpiter",
+    "content": "**Júpiter** tiene bandas de nubes y una gran tormenta llamada Gran Mancha Roja.",
+    "answer": "",
+    "active": true,
+    "frequency": "MEDIUM",
+    "refCode": "A01",
+    "imageId": "pilot-02"
+  },
+  {
+    "type": "FACT",
+    "title": "Saturno",
+    "content": "Los anillos de **Saturno** están formados principalmente por fragmentos de hielo.",
+    "answer": "",
+    "active": true,
+    "frequency": "MEDIUM",
+    "refCode": "A02",
+    "imageId": "pilot-03"
+  },
+  {
+    "type": "FACT",
+    "title": "Venus",
+    "content": "**Venus** es el planeta más caliente del Sistema Solar. Su atmósfera retiene mucho calor.",
+    "answer": "",
+    "active": true,
+    "frequency": "MEDIUM",
+    "refCode": "A03",
+    "imageId": "pilot-04"
+  },
+  {
+    "type": "FACT",
+    "title": "Marte",
+    "content": "A **Marte** lo llamamos el planeta rojo por el color de su superficie.",
+    "answer": "",
+    "active": true,
+    "frequency": "MEDIUM",
+    "refCode": "A04",
+    "imageId": "pilot-05"
+  },
+  {
+    "type": "FACT",
+    "title": "La Luna",
+    "content": "La **Luna** es el satélite natural de la Tierra. En su superficie podemos reconocer muchos cráteres.",
+    "answer": "",
+    "active": true,
+    "frequency": "MEDIUM",
+    "refCode": "A05",
+    "imageId": "pilot-06"
+  },
+  {
+    "type": "FACT",
+    "title": "El Sol",
+    "content": "El **Sol** es una estrella. La Tierra recibe de él luz y calor.",
+    "answer": "",
+    "active": true,
+    "frequency": "MEDIUM",
+    "refCode": "A06",
+    "imageId": "pilot-07"
+  },
+  {
+    "type": "FACT",
+    "title": "La Tierra",
+    "content": "La **Tierra** es nuestro planeta. En la imagen puedes distinguir océanos, continentes y nubes.",
+    "answer": "",
+    "active": true,
+    "frequency": "MEDIUM",
+    "refCode": "A07",
+    "imageId": "pilot-08"
+  },
+  {
+    "type": "HISTORY",
+    "title": "Marie Curie",
+    "content": "**Marie Curie** fue una científica que investigó la radiactividad. Esta fotografía nos permite conocer su rostro.",
+    "answer": "",
+    "active": true,
+    "frequency": "MEDIUM",
+    "refCode": "H02",
+    "imageId": "pilot-09"
+  },
+  {
+    "type": "HISTORY",
+    "title": "Pirámides de Guiza",
+    "content": "Estas son las **pirámides de Guiza**, en Egipto. Sus grandes construcciones de piedra llegan hasta nuestros días.",
+    "answer": "",
+    "active": true,
+    "frequency": "MEDIUM",
+    "refCode": "H03",
+    "imageId": "pilot-10"
+  },
+  {
+    "type": "HISTORY",
+    "title": "Torre Eiffel",
+    "content": "La **Torre Eiffel** está en París, Francia. Su estructura de metal se reconoce desde lejos.",
+    "answer": "",
+    "active": true,
+    "frequency": "MEDIUM",
+    "refCode": "H04",
+    "imageId": "pilot-11"
+  },
+  {
+    "type": "HISTORY",
+    "title": "Coliseo",
+    "content": "El **Coliseo** está en Roma, Italia. Es un edificio de la antigua Roma que aún podemos visitar.",
+    "answer": "",
+    "active": true,
+    "frequency": "MEDIUM",
+    "refCode": "H05",
+    "imageId": "pilot-12"
+  },
+  {
+    "type": "FACT",
+    "title": "La abeja",
+    "content": "Una **abeja** visita una flor. Al pasar entre flores, las abejas pueden transportar polen.",
+    "answer": "",
+    "active": true,
+    "frequency": "MEDIUM",
+    "refCode": "A08",
+    "imageId": "pilot-13"
+  },
+  {
+    "type": "FACT",
+    "title": "La mariposa",
+    "content": "Esta **mariposa monarca** tiene alas anaranjadas y negras. Junto a ella puedes ver una crisálida.",
+    "answer": "",
+    "active": true,
+    "frequency": "MEDIUM",
+    "refCode": "A09",
+    "imageId": "pilot-14"
+  },
+  {
+    "type": "FACT",
+    "title": "Monte Fuji",
+    "content": "El **monte Fuji** es un volcán de Japón. En la imagen se ve su cumbre nevada sobre el paisaje.",
+    "answer": "",
+    "active": true,
+    "frequency": "MEDIUM",
+    "refCode": "A10",
+    "imageId": "pilot-15"
+  },
+  {
+    "type": "QUIZ",
+    "title": "Cristo Redentor",
+    "content": "¿En qué país está el **Cristo Redentor**?",
+    "answer": "En Brasil, en la ciudad de Río de Janeiro.",
+    "active": true,
+    "frequency": "MEDIUM",
+    "refCode": "Z01",
+    "quiz": {
+      "options": [
+        "Brasil",
+        "Egipto",
+        "Japón"
+      ],
+      "correctIndex": 0,
+      "seconds": 20
+    }
+  },
+  {
+    "type": "QUIZ",
+    "title": "Júpiter",
+    "content": "¿Qué es la **Gran Mancha Roja** de Júpiter?",
+    "answer": "Es una enorme tormenta en la atmósfera de Júpiter.",
+    "active": true,
+    "frequency": "MEDIUM",
+    "refCode": "Z02",
+    "quiz": {
+      "options": [
+        "Una montaña",
+        "Una tormenta",
+        "Un océano"
+      ],
+      "correctIndex": 1,
+      "seconds": 20
+    }
+  },
+  {
+    "type": "QUIZ",
+    "title": "Saturno",
+    "content": "¿Qué rodea a **Saturno** y lo hace fácil de reconocer?",
+    "answer": "Sus anillos, formados principalmente por fragmentos de hielo.",
+    "active": true,
+    "frequency": "MEDIUM",
+    "refCode": "Z03",
+    "quiz": {
+      "options": [
+        "Anillos",
+        "Árboles",
+        "Carreteras"
+      ],
+      "correctIndex": 0,
+      "seconds": 20
+    }
+  },
+  {
+    "type": "QUIZ",
+    "title": "Planeta más caliente",
+    "content": "¿Cuál es el planeta más **caliente** del Sistema Solar?",
+    "answer": "Venus. Su atmósfera densa retiene mucho calor mediante el efecto invernadero.",
+    "active": true,
+    "frequency": "MEDIUM",
+    "refCode": "Z04",
+    "quiz": {
+      "options": [
+        "Mercurio",
+        "Venus",
+        "Marte"
+      ],
+      "correctIndex": 1,
+      "seconds": 20
+    }
+  },
+  {
+    "type": "QUIZ",
+    "title": "Marte",
+    "content": "¿A qué planeta llamamos el **planeta rojo**?",
+    "answer": "A Marte, por el color rojizo de su superficie.",
+    "active": true,
+    "frequency": "MEDIUM",
+    "refCode": "Z05",
+    "quiz": {
+      "options": [
+        "Saturno",
+        "La Tierra",
+        "Marte"
+      ],
+      "correctIndex": 2,
+      "seconds": 20
+    }
+  },
+  {
+    "type": "QUIZ",
+    "title": "La Luna",
+    "content": "¿Cuál es el **satélite natural** de la Tierra?",
+    "answer": "La Luna. Gira alrededor de la Tierra.",
+    "active": true,
+    "frequency": "MEDIUM",
+    "refCode": "Z06",
+    "quiz": {
+      "options": [
+        "El Sol",
+        "La Luna",
+        "Venus"
+      ],
+      "correctIndex": 1,
+      "seconds": 20
+    }
+  },
+  {
+    "type": "QUIZ",
+    "title": "El Sol",
+    "content": "¿Qué clase de astro es el **Sol**?",
+    "answer": "Es una estrella que emite luz y calor.",
+    "active": true,
+    "frequency": "MEDIUM",
+    "refCode": "Z07",
+    "quiz": {
+      "options": [
+        "Una estrella",
+        "Un planeta",
+        "Un satélite"
+      ],
+      "correctIndex": 0,
+      "seconds": 20
+    }
+  },
+  {
+    "type": "QUIZ",
+    "title": "La Tierra",
+    "content": "¿Qué partes de la **Tierra** contienen grandes extensiones de agua salada?",
+    "answer": "Los océanos. En las imágenes de la Tierra suelen verse de color azul.",
+    "active": true,
+    "frequency": "MEDIUM",
+    "refCode": "Z08",
+    "quiz": {
+      "options": [
+        "Los desiertos",
+        "Los océanos",
+        "Las montañas"
+      ],
+      "correctIndex": 1,
+      "seconds": 20
+    }
+  },
+  {
+    "type": "QUIZ",
+    "title": "Marie Curie",
+    "content": "¿Cuál fue el trabajo de **Marie Curie**?",
+    "answer": "Fue científica e investigó la radiactividad.",
+    "active": true,
+    "frequency": "MEDIUM",
+    "refCode": "Z09",
+    "quiz": {
+      "options": [
+        "Científica",
+        "Piloto de carreras",
+        "Arquitecta"
+      ],
+      "correctIndex": 0,
+      "seconds": 20
+    }
+  },
+  {
+    "type": "QUIZ",
+    "title": "Pirámides de Guiza",
+    "content": "¿En qué país están las **pirámides de Guiza**?",
+    "answer": "En Egipto, en el continente africano.",
+    "active": true,
+    "frequency": "MEDIUM",
+    "refCode": "Z10",
+    "quiz": {
+      "options": [
+        "Francia",
+        "Brasil",
+        "Egipto"
+      ],
+      "correctIndex": 2,
+      "seconds": 20
+    }
+  },
+  {
+    "type": "QUIZ",
+    "title": "Torre Eiffel",
+    "content": "¿En qué ciudad está la **Torre Eiffel**?",
+    "answer": "En París, la capital de Francia.",
+    "active": true,
+    "frequency": "MEDIUM",
+    "refCode": "Z11",
+    "quiz": {
+      "options": [
+        "París",
+        "Roma",
+        "Río de Janeiro"
+      ],
+      "correctIndex": 0,
+      "seconds": 20
+    }
+  },
+  {
+    "type": "QUIZ",
+    "title": "Coliseo",
+    "content": "¿Qué edificio está en **Roma**?",
+    "answer": "El Coliseo, una construcción de la antigua Roma.",
+    "active": true,
+    "frequency": "MEDIUM",
+    "refCode": "Z12",
+    "quiz": {
+      "options": [
+        "La Torre Eiffel",
+        "El Coliseo",
+        "El Cristo Redentor"
+      ],
+      "correctIndex": 1,
+      "seconds": 20
+    }
+  },
+  {
+    "type": "QUIZ",
+    "title": "La abeja",
+    "content": "¿Qué pueden transportar las **abejas** de una flor a otra?",
+    "answer": "Polen. Su transporte entre flores contribuye a la polinización.",
+    "active": true,
+    "frequency": "MEDIUM",
+    "refCode": "Z13",
+    "quiz": {
+      "options": [
+        "Arena",
+        "Polen",
+        "Piedras"
+      ],
+      "correctIndex": 1,
+      "seconds": 20
+    }
+  },
+  {
+    "type": "QUIZ",
+    "title": "La mariposa",
+    "content": "¿De cuál de estas etapas sale una **mariposa adulta**?",
+    "answer": "De una crisálida, durante su metamorfosis.",
+    "active": true,
+    "frequency": "MEDIUM",
+    "refCode": "Z14",
+    "quiz": {
+      "options": [
+        "Una semilla",
+        "Una piedra",
+        "Una crisálida"
+      ],
+      "correctIndex": 2,
+      "seconds": 20
+    }
+  },
+  {
+    "type": "QUIZ",
+    "title": "Monte Fuji",
+    "content": "¿Qué es el **monte Fuji**?",
+    "answer": "Es un volcán situado en Japón.",
+    "active": true,
+    "frequency": "MEDIUM",
+    "refCode": "Z15",
+    "quiz": {
+      "options": [
+        "Un volcán",
+        "Un océano",
+        "Un monumento de metal"
+      ],
+      "correctIndex": 0,
+      "seconds": 20
+    }
+  }
+]

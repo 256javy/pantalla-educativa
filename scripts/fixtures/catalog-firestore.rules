@@ -1,0 +1,9 @@
+rules_version = '2';
+service cloud.firestore {
+ match /databases/{database}/documents {
+  match /cards/{card} {
+   allow read: if true;
+   allow write: if request.resource.data.get('denyArchive', false) != true || !request.resource.data.get('catalogArchive', '').matches('replace-.*');
+  }
+ }
+}

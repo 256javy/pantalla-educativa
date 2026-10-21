@@ -40,3 +40,12 @@ assert.equal(quizDuration(timed), 20);
 assert.equal(quizAnswerDuration(timed), 12);
 assert.equal(quizDuration({ ...timed, quiz: { ...timed.quiz!, seconds: NaN } }), 15);
 assert.equal(quizDuration({ ...timed, quiz: { ...timed.quiz!, seconds: 999 } }), 60);
+
+import replacement from '../src/lib/catalogo-visual-v1.json';
+assert.equal(replacement.length, 30);
+assert.equal(new Set(replacement.map((c) => c.refCode)).size, 30);
+for (const card of replacement) assert.equal(validateCardInput(card).ok, true, card.title);
+assert.equal(replacement.filter((c) => 'imageId' in c).length, 15);
+assert.equal(replacement.filter((c) => 'quiz' in c).length, 15);
+assert.ok(replacement.every((c) => c.active && (c.type === 'QUIZ' ? 'quiz' in c : 'imageId' in c)));
+console.log('30 píldoras nuevas: 15 imágenes y 15 quizzes válidos, todas activas.');
